@@ -6,67 +6,69 @@
 
 - 在 https://github.com/Mrs4s/go-cqhttp/releases 下载对应平台的可执行文件, 放到 go-cqhttp 目录中
 
-- 安装 nodejs 环境 (建议 12.0 以上版本), 根目录运行 `npm install` 安装依赖
+- 安装 nodejs 环境 (建议 12.0 以上版本), 根目录运行 `pnpm install` 安装依赖
 
 - 运行 `go-cqhttp/下载的文件`, 根据提示填写 QQ 号和密码等信息, 参考文档 https://docs.go-cqhttp.org/guide/quick_start.html
 
-- 根目录运行 `npm run dev`
+- 根目录运行 `pnpm run dev`
 
 ## 插件
 
 ### 配置插件
 
-在 `config.js` 中配置的插件才会被加载, 并且需要在插件目录运行 `npm install` 安装依赖
+在 `index.ts` 中配置的插件才会被加载, 并且需要在插件目录运行 `pnpm install` 安装依赖
 
-```js
-// config.js
-module.exports = {
-  plugin: {
-    // key: 可以是 npm 包名, 也可以是相对路径
-    // value: 传给插件的配置对象 {}
-    'path-to-plugin': {},
+```ts
+// index.ts
+
+import { defineConfig } from './utils/define-config'
+import Tap from './plugin/blank'
+
+defineConfig({
+  processor: 'ws', // http 暂时还没写
+  url: 'ws://0.0.0.0:6700',
+  plugins: [
+    Tap,
+  ],
+  validGroup: {
+    groups: [12345678, 90123456], // 为空时均接收，不为空时仅接受列表内的群号
+    users: [], // 同上，不为空时，仅允许接受列表内的用户发送的消息
   },
-}
+  validPrivate: [], // 同上
+})
 ```
 
 ### 内置插件
 
 | 插件                      | 说明       |
 | ------------------------- | ---------- |
-| [almanac](plugin/almanac) | 黄历插件   |
 | [blank](plugin/blank)     | 空白插件   |
-| [chives](plugin/chives)   | 韭菜插件   |
-| [dapan](plugin/dapan)     | 大盘插件   |
-| [fund](plugin/fund)       | 基金查询   |
-| [hot](plugin/hot)         | 热门词汇   |
-| [mm](plugin/mm)           | 美女图片   |
 | [qrcode](plugin/qrcode)   | 二维码     |
-| [recall](plugin/recall)   | 消息防撤回 |
-| [run-js](plugin/run-js)   | 运行 JS    |
-| [stock](plugin/stock)     | 股票查询   |
-| [weibo](plugin/weibo)     | 微博插件   |
+| [shota](plugin/shota)     | 正太图（续自行放图片）   |
 
 ### 开发插件
 
 复制 [plugin/blank](plugin/blank), 参考其它插件和 https://docs.go-cqhttp.org 进行开发
 
-```js
-/**
- * @param options 传给插件的配置
- */
-module.exports = options => {
-  /**
-   * @param data 收到的消息
-   * @param ws 机器人 WebSocket 实例
-   * @param http 机器人 HTTP 实例
-   */
-  return async ({ data, ws, http }) => {
-    // TODO:
-  }
-}
+```ts
+// plugin/blank
+import { definePlugin } from '../../utils/define-plugin'
+
+export default definePlugin({
+  name: 'blank',
+  desc: 'No desc',
+  async setup({ data, ws }) {
+    // TODO
+  },
+  validGroup: {
+    groups: [12345678, 90123456], // 为空时均接收，不为空时仅接受列表内的群号
+    users: [], // 同上，不为空时，仅允许接受列表内的用户发送的消息
+  },
+  validPrivate: [], // 同上
+})
 ```
 
-## 部署 (Linux)
+## 部署 ( 暂未测试 ) (Linux)
 
 - 安装 screen 工具后: 后台运行 `go-cqhttp/下载的文件` (screen 命令用法自行搜索)
 

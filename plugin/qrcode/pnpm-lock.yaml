@@ -1,0 +1,15 @@
+lockfileVersion: 5.4
+
+specifiers:
+  qr-image: ^3.2.0
+
+dependencies:
+  qr-image: registry.npmmirror.com/qr-image/3.2.0
+
+packages:
+
+  registry.npmmirror.com/qr-image/3.2.0:
+    resolution: {integrity: sha512-rXKDS5Sx3YipVsqmlMJsJsk6jXylEpiHRC2+nJy66fxA5ExYyGa4PqwteW69SaVmAb2OQ18HbYriT7cGQMbduw==, registry: https://registry.npm.taobao.org/, tarball: https://registry.npmmirror.com/qr-image/-/qr-image-3.2.0.tgz}
+    name: qr-image
+    version: 3.2.0
+    dev: false

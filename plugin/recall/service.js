@@ -2,7 +2,8 @@ async function getRecall(http, message_id) {
   try {
     const { data } = await http.send('get_msg', { message_id })
     return data.message
-  } catch (e) {
+  }
+  catch (e) {
     console.error('[recall]', e)
     return null
   }
