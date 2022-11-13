@@ -16,10 +16,8 @@ interface FuncParamsWs {
 interface PluginOptions {
   name: string
   desc: string
-  validGroup?: {
-    groups: number[]
-    users: number[]
-  }
+  validGroups?: number[]
+  validGroupUsers?: number[]
   validPrivate?: number[]
   setup: (params: FuncParamsWs) => void | Promise<void>
 }
@@ -63,14 +61,10 @@ function definePlugin(options: PluginOptions | FunctionalPlugin): PluginType {
 
 function resolveOptions(options: PluginOptions): RestrictedPluginOptions {
   const o: RestrictedPluginOptions = {
-    name: options.name,
-    desc: options.desc,
-    setup: options.setup,
-    validGroup: {
-      groups: options.validGroup?.groups || [],
-      users: options.validGroup?.users || [],
-    },
-    validPrivate: options.validPrivate || [],
+    validGroups: [],
+    validGroupUsers: [],
+    validPrivate: [],
+    ...options,
   }
   return o
 }
@@ -88,13 +82,13 @@ function install(plugins: PluginType[], params: FuncParamsWs) {
       }
     }
     else if (isGroup(data)) {
-      if (plugin.validGroup.groups.length > 0) {
-        if (!plugin.validGroup.groups.includes(data.group_id))
+      if (plugin.validGroups.length > 0) {
+        if (!plugin.validGroups.includes(data.group_id))
           return
       }
 
-      if (plugin.validGroup.users.length > 0) {
-        if (!plugin.validGroup.users.includes(data.user_id))
+      if (plugin.validGroupUsers.length > 0) {
+        if (!plugin.validGroupUsers.includes(data.user_id))
           return
       }
     }

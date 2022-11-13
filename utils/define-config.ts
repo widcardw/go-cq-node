@@ -10,10 +10,8 @@ interface CqtsConfig {
      */
   processor?: 'ws' | 'http'
   plugins?: PluginType[]
-  validGroup?: {
-    groups: number[]
-    users: number[]
-  }
+  validGroups?: number[]
+  validGroupUsers?: number[]
   validPrivate?: number[]
   url?: string
 }
@@ -24,11 +22,8 @@ function defineConfig(config: CqtsConfig) {
   const resolvedConfig: RestrictedCqtsConfig = {
     processor: 'ws',
     plugins: [],
-    validGroup: {
-      groups: [],
-      users: [],
-      ...config.validGroup,
-    },
+    validGroups: [],
+    validGroupUsers: [],
     validPrivate: [],
     url: 'ws://0.0.0.0:6700',
     ...config,
@@ -38,15 +33,15 @@ function defineConfig(config: CqtsConfig) {
     ws.listen((data: PrivateMessage | GroupMessage | any) => {
       if (isGroup(data)) {
         // 有效的群聊，为空时均有效
-        if (resolvedConfig.validGroup.groups.length > 0) {
+        if (resolvedConfig.validGroups.length > 0) {
           // 仅在列表中的群有效
-          if (!resolvedConfig.validGroup.groups.includes(data.group_id))
+          if (!resolvedConfig.validGroups.includes(data.group_id))
             return
         }
 
         // 仅有指定用户有效
-        if (resolvedConfig.validGroup.users.length > 0) {
-          if (!resolvedConfig.validGroup.users.includes(data.user_id))
+        if (resolvedConfig.validGroupUsers.length > 0) {
+          if (!resolvedConfig.validGroupUsers.includes(data.user_id))
             return
         }
       }

@@ -21,17 +21,13 @@ import { getImage } from './service'
 // }
 
 const plugin = (valid?: {
-  validGroup?:
-  {
-    groups: number[]
-    users: number[]
-  }
+  validGroups?: number[]
+  validGroupUsers?: number[]
   validPrivate?: number[]
 }) => definePlugin({
   name: 'shota',
   desc: '发送正太图片',
-  validGroup: valid?.validGroup,
-  validPrivate: valid?.validPrivate,
+  ...valid,
   async setup({ data, ws }) {
     if (!data.message)
       return

@@ -1,6 +1,7 @@
 import fg from 'fast-glob'
+import type { ImageMessage } from '../../types'
 
-async function getImage() {
+async function getImage(): Promise<ImageMessage> {
   const pics = await fg('/Users/leeocoy/Pictures/shota/*', { absolute: true })
   const len = pics.length
   const rand = Math.floor(len * Math.random())
