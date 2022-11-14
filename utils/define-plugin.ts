@@ -1,16 +1,26 @@
-import type { Bhttp, Bws, GroupMessage, PrivateMessage } from '../types'
+import type { Bhttp, Bws, GroupMessage, GroupNotifyMessage, PrivateMessage } from '../types'
 import { isGroup, isPrivate } from '../types'
 
 interface FuncParamsWs {
-  data: PrivateMessage | GroupMessage | any
+  data: PrivateMessage | GroupMessage | GroupNotifyMessage | any
   ws: Bws
   http?: Bhttp
+  // type: '__FuncParamsWs'
 }
 
 // interface FuncParamsHttp {
 //   data: PrivateMessage | GroupMessage | any
 //   http: Bhttp
 //   ws?: Bws
+//   type: '__FuncParamsHttp'
+// }
+
+// function isFuncParamsWs(data: any): data is FuncParamsWs {
+//   return data.type && data.type === '__FuncParamsWs'
+// }
+
+// function isFuncParamsHttp(data: any): data is FuncParamsHttp {
+//   return data.type && data.type === '__FuncParamsHttp'
 // }
 
 interface PluginOptions {

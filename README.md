@@ -45,6 +45,8 @@ defineConfig({
 | [blank](plugin/blank)     | 空白插件   |
 | [qrcode](plugin/qrcode)   | 二维码     |
 | [shota](plugin/shota)     | 正太图（续自行放图片）   |
+| [kfc](plugin/kfc)     | 肯德基疯狂星期四文案   |
+| [tap](plugin/tap)     |  自动回复文案  |
 
 ### 开发插件
 

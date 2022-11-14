@@ -1,4 +1,4 @@
-import { isGroup } from '../../types'
+import { isGroup, isGroupNotify } from '../../types'
 import { definePlugin } from '../../utils/define-plugin'
 
 const pattern = /^[摸拍挠戳]正太(头|脑袋)?$/
@@ -23,6 +23,11 @@ const m2 = [
   '不可以这样！',
   '轻点～',
   '轻点～',
+]
+
+const chuo = [
+  '别戳了！',
+  '好痒啊',
 ]
 
 export default definePlugin({
@@ -52,6 +57,13 @@ export default definePlugin({
           message: m2[rand],
         })
       }
+    }
+    else if (isGroupNotify(data)) {
+      const rand = Math.floor(Math.random() * chuo.length)
+      ws.send('send_group_msg', {
+        group_id: data.group_id,
+        message: chuo[rand],
+      })
     }
   },
 })

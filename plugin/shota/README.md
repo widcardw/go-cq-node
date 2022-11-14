@@ -1,13 +1,4 @@
-# blank
+# 正太图
 
-> 空白插件
+> 从本地获取一张正太图发送
 
-```js
-module.exports = {
-  plugin: {
-    './plugin/blank': {}
-  }
-}
-```
-
-TODO:

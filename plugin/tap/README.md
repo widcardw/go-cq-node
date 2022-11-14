@@ -1,13 +1,5 @@
-# blank
+# Tap
 
-> 空白插件
+> 摸正太头，戳正太淡淡，自动回复一段话
 
-```js
-module.exports = {
-  plugin: {
-    './plugin/blank': {}
-  }
-}
-```
 
-TODO:

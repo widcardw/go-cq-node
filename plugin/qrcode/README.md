@@ -1,16 +1,6 @@
 # qrcode
 
-!!! 暂时坏掉了，之后修 !!!
-
 > 二维码插件
-
-```js
-module.exports = {
-  plugin: {
-    './plugin/qrcode': {}
-  }
-}
-```
 
 用户发送 "QR/QRCODE/二维码 内容", 机器人回复内容对应的二维码图片
 

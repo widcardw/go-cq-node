@@ -57,6 +57,17 @@ interface GroupMessage {
   }
 }
 
+interface GroupNotifyMessage {
+  post_type: 'notice'
+  notice_type: 'notify'
+  time: number
+  self_id: number
+  sub_type: string
+  group_id: number
+  user_id: number
+  target_id: number // 被戳者
+}
+
 type TextMessage = string | {
   type: 'text'
   data: {
@@ -98,6 +109,11 @@ function isGroup(data: any): data is GroupMessage {
   return data.message_type && data.message_type === 'group'
 }
 
+function isGroupNotify(data: any): data is GroupNotifyMessage {
+  return data.post_type && data.post_type === 'notice'
+  && data.notice_type && data.notice_type === 'notify'
+}
+
 export {
   Bws,
   Bhttp,
@@ -107,8 +123,10 @@ export {
   ReplyMessage,
   ImageMessage,
   MulMessage,
+  GroupNotifyMessage,
   GroupMessageParams,
   PrivateMessageParams,
   isPrivate,
   isGroup,
+  isGroupNotify,
 }
