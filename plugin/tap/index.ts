@@ -32,7 +32,7 @@ const chuo = [
 
 export default definePlugin({
   name: 'Tap',
-  desc: '输入 [摸拍挠戳]正太(头|脑袋) 自动回应',
+  desc: '[摸拍挠戳]正太(头|脑袋)',
   async setup({ data, ws }) {
     if (isGroup(data)) {
       if (!data.message)

@@ -28,6 +28,9 @@ function defineConfig(config: CqtsConfig) {
     url: 'ws://0.0.0.0:6700',
     ...config,
   }
+  const pluginInfo = resolvedConfig.plugins.map((p, index) => {
+    return `${index + 1}. ${p.name}: ${p.desc}`
+  })
   if (resolvedConfig.processor === 'ws') {
     const ws = createWs(resolvedConfig.url)
     ws.listen((data: PrivateMessage | GroupMessage | any) => {
@@ -44,12 +47,26 @@ function defineConfig(config: CqtsConfig) {
           if (!resolvedConfig.validGroupUsers.includes(data.user_id))
             return
         }
+
+        if (data.message === '正太 help') {
+          ws.send('send_group_msg', {
+            group_id: data.group_id,
+            message: pluginInfo.join('\n'),
+          })
+        }
       }
       else if (isPrivate(data)) {
         // 私聊，仅固定用户有效
         if (resolvedConfig.validPrivate.length > 0) {
           if (!resolvedConfig.validPrivate.includes(data.user_id))
             return
+        }
+
+        if (data.message === '正太 help') {
+          ws.send('send_private_msg', {
+            user_id: data.user_id,
+            message: pluginInfo.join('\n'),
+          })
         }
       }
 

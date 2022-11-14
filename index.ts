@@ -15,4 +15,5 @@ defineConfig({
     QrCode,
     Kfc,
   ],
+  validGroups: Object.values(groups),
 })
