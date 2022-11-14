@@ -4,6 +4,7 @@ import { getImage } from './service'
 
 const pattern = /^(二维码|qr(code)?)\s+/i
 let inteval: NodeJS.Timeout
+let notAbleToSend = false
 
 export default definePlugin({
   name: 'Qr Code',
@@ -22,7 +23,7 @@ export default definePlugin({
       return
 
     if (isGroup(data)) {
-      if (inteval) {
+      if (notAbleToSend) {
         ws.send('send_group_msg', {
           group_id: data.group_id,
           message: '你先别急',
@@ -41,7 +42,7 @@ export default definePlugin({
       })
     }
     else if (isPrivate(data)) {
-      if (inteval) {
+      if (notAbleToSend) {
         ws.send('send_private_msg', {
           user_id: data.user_id,
           message: '你先别急',
@@ -54,8 +55,10 @@ export default definePlugin({
       })
     }
 
+    notAbleToSend = true
     inteval = setTimeout(() => {
       clearTimeout(inteval)
-    }, 10000)
+      notAbleToSend = false
+    }, 5000)
   },
 })

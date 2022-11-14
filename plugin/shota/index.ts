@@ -4,6 +4,7 @@ import { definePlugin } from '../../utils/define-plugin'
 import { getImage } from './service'
 
 let interval: NodeJS.Timer
+let notAbleToSend = false
 
 const plugin = (valid?: {
   validGroups?: number[]
@@ -22,7 +23,7 @@ const plugin = (valid?: {
       return
 
     if (isGroup(data)) {
-      if (interval) {
+      if (notAbleToSend) {
         ws.send('send_group_msg', {
           group_id: data.group_id,
           message: '你先别急',
@@ -37,7 +38,7 @@ const plugin = (valid?: {
       })
     }
     else if (isPrivate(data)) {
-      if (interval) {
+      if (notAbleToSend) {
         ws.send('send_private_msg', {
           user_id: data.user_id,
           message: '你先别急',
@@ -52,8 +53,10 @@ const plugin = (valid?: {
       })
     }
 
+    notAbleToSend = true
     interval = setTimeout(() => {
       clearInterval(interval)
+      notAbleToSend = false
     }, 5000)
   },
 })
