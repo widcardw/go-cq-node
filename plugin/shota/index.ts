@@ -57,7 +57,7 @@ const plugin = (valid?: {
     interval = setTimeout(() => {
       clearInterval(interval)
       notAbleToSend = false
-    }, 5000)
+    }, 8000)
   },
 })
 
