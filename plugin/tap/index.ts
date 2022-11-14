@@ -28,6 +28,7 @@ const m2 = [
 const chuo = [
   '别戳了！',
   '好痒啊',
+  '嗯！哼！哼！啊啊啊啊啊啊啊！！！',
 ]
 
 export default definePlugin({

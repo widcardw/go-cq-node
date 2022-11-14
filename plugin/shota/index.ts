@@ -1,24 +1,9 @@
 // import type { Bhttp, Bws } from '../../types'
+import { isGroup, isPrivate } from '../../types'
 import { definePlugin } from '../../utils/define-plugin'
 import { getImage } from './service'
 
-// export default async function ({ data, ws }: { data: any; ws: Bws; http: Bhttp }) {
-//   if (!data.message)
-//     return
-
-//   const message = data.message.trim()
-//   if (message !== '正太')
-//     return
-
-//   if (data.message_type === 'group') {
-//     ws.send('send_group_msg', {
-//       group_id: data.group_id,
-//       message: [
-//         await getImage(),
-//       ],
-//     })
-//   }
-// }
+let interval: NodeJS.Timer
 
 const plugin = (valid?: {
   validGroups?: number[]
@@ -36,7 +21,14 @@ const plugin = (valid?: {
     if (message !== '正太' && message !== 'shota')
       return
 
-    if (data.message_type === 'group') {
+    if (isGroup(data)) {
+      if (interval) {
+        ws.send('send_group_msg', {
+          group_id: data.group_id,
+          message: '你先别急',
+        })
+        return
+      }
       ws.send('send_group_msg', {
         group_id: data.group_id,
         message: [
@@ -44,7 +36,14 @@ const plugin = (valid?: {
         ],
       })
     }
-    else if (data.message_type === 'private') {
+    else if (isPrivate(data)) {
+      if (interval) {
+        ws.send('send_private_msg', {
+          user_id: data.user_id,
+          message: '你先别急',
+        })
+        return
+      }
       ws.send('send_private_msg', {
         user_id: data.user_id,
         message: [
@@ -52,6 +51,10 @@ const plugin = (valid?: {
         ],
       })
     }
+
+    interval = setTimeout(() => {
+      clearInterval(interval)
+    }, 5000)
   },
 })
 
