@@ -1,3 +1,4 @@
+import { bots } from '../../private/bot'
 import { isGroup, isGroupNotify } from '../../types'
 import { definePlugin } from '../../utils/define-plugin'
 
@@ -29,6 +30,8 @@ const chuo = [
   '别戳了！',
   '好痒啊',
   '嗯！哼！哼！啊啊啊啊啊啊啊！！！',
+  '戳喵呜',
+  '怎么了嘛',
 ]
 
 export default definePlugin({
@@ -36,6 +39,9 @@ export default definePlugin({
   desc: '[摸拍挠戳]正太(头|脑袋)',
   async setup({ data, ws }) {
     if (isGroup(data)) {
+      if (Object.values(bots).includes(data.user_id))
+        return
+
       if (!data.message)
         return
 
@@ -58,8 +64,18 @@ export default definePlugin({
           message: m2[rand],
         })
       }
+      else if (message.includes(data.self_id.toString())) {
+        ws.send('send_group_msg', {
+          group_id: data.group_id,
+          message: '怎么了嘛',
+        })
+      }
     }
     else if (isGroupNotify(data)) {
+      if (data.target_id !== data.self_id)
+        return
+      if (Math.random() > 0.5)
+        return
       const rand = Math.floor(Math.random() * chuo.length)
       ws.send('send_group_msg', {
         group_id: data.group_id,

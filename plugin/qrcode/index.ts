@@ -7,7 +7,7 @@ let inteval: NodeJS.Timeout
 let notAbleToSend = false
 
 export default definePlugin({
-  name: 'Qr Code',
+  name: 'QrCode',
   desc: '二维码生成器',
   async setup({ data, ws }) {
     if (!data.message)

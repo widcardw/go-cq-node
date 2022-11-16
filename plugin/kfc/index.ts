@@ -23,7 +23,7 @@ export default definePlugin({
         if (!pattern.test(message))
           return
 
-        if (new Date().getDay() !== 3) {
+        if (new Date().getDay() !== 4) {
           ws.send('send_group_msg', {
             group_id: data.group_id,
             message: '今天还没到疯狂星期四捏',
