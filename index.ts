@@ -4,6 +4,7 @@ import Tap from './plugin/tap'
 import QrCode from './plugin/qrcode'
 import Kfc from './plugin/kfc'
 import { groups } from './private/groups'
+import Xibao from './plugin/xibao'
 
 defineConfig({
   plugins: [
@@ -14,6 +15,7 @@ defineConfig({
     Tap,
     QrCode,
     Kfc,
+    Xibao(Object.values(groups)),
   ],
   validGroups: Object.values(groups),
 })

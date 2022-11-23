@@ -64,12 +64,12 @@ export default definePlugin({
           message: m2[rand],
         })
       }
-      else if (message.includes(data.self_id.toString())) {
-        ws.send('send_group_msg', {
-          group_id: data.group_id,
-          message: '怎么了嘛',
-        })
-      }
+      // else if (message.includes(data.self_id.toString())) {
+      //   ws.send('send_group_msg', {
+      //     group_id: data.group_id,
+      //     message: '怎么了嘛',
+      //   })
+      // }
     }
     else if (isGroupNotify(data)) {
       if (data.target_id !== data.self_id)

@@ -1,12 +1,12 @@
 import WebSocket from 'ws'
 // import { bot } from '../config'
-import type { Bws, GroupMessageParams, PrivateMessageParams } from '../types'
+import type { Bws, GroupFileMessage, GroupMessageParams, PrivateFileMessage, PrivateMessageParams } from '../types'
 
 export default function createWs(url: string) {
   const ws = new WebSocket(url)
 
   const wws: Bws = {
-    send(action: string, params: GroupMessageParams | PrivateMessageParams) {
+    send(action: string, params: GroupMessageParams | PrivateMessageParams | PrivateFileMessage | GroupFileMessage) {
       ws.send(JSON.stringify({ action, params }))
     },
     listen(callback: (o: any) => void) {

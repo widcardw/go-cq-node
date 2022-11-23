@@ -8,7 +8,7 @@ export async function getImage(text: string): Promise<ImageMessage[] | TextMessa
   return new Promise((resolve) => {
     const filename = path.join(
       os.tmpdir(),
-            `go-cqhttp-node-ts-qrcode-${Date.now()}.png`,
+      `go-cqhttp-node-ts-qrcode-${Date.now()}.png`,
     )
     const stream = fs.createWriteStream(filename)
     qr.image(text, {

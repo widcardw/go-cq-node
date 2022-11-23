@@ -48,7 +48,7 @@ function defineConfig(config: CqtsConfig) {
             return
         }
 
-        if (data.message === '正太 help') {
+        if (/^(正太|shota) help$/i.test(data.message.trim())) {
           ws.send('send_group_msg', {
             group_id: data.group_id,
             message: pluginInfo.join('\n'),
@@ -62,7 +62,7 @@ function defineConfig(config: CqtsConfig) {
             return
         }
 
-        if (data.message === '正太 help') {
+        if (/^(正太|shota) help$/i.test(data.message.trim())) {
           ws.send('send_private_msg', {
             user_id: data.user_id,
             message: pluginInfo.join('\n'),

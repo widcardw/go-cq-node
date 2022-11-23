@@ -11,3 +11,5 @@ package-lock.json
 plugin/*/db.sqlite
 
 private/
+send_file/
+tsx/

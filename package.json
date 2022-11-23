@@ -3,7 +3,9 @@
   "scripts": {
     "dev": "cross-env NODE_ENV=development nodemon index.ts",
     "start": "cross-env NODE_ENV=production pm2 start index.js --name go-cqhttp-node --log-date-format 'YYYY-MM-DD HH:mm:ss'",
-    "reload": "pm2 reload go-cqhttp-node"
+    "reload": "pm2 reload go-cqhttp-node",
+    "send": "cross-env NODE_ENV=development nodemon send_file/index.ts",
+    "test": "cross-env NODE_ENV=development nodemon test.ts"
   },
   "dependencies": {
     "axios": "^0.21.1",

@@ -1,6 +1,6 @@
 interface Bws {
   listen: (callback: (o: any) => void) => void
-  send: (action: string, params: GroupMessageParams | PrivateMessageParams) => void
+  send: (action: string, params: GroupMessageParams | PrivateMessageParams | PrivateFileMessage | GroupFileMessage) => void
 }
 
 interface Bhttp {
@@ -101,6 +101,18 @@ interface PrivateMessageParams {
   message: MulMessage | MulMessage[]
 }
 
+interface PrivateFileMessage {
+  user_id: number
+  file: string
+  name: string
+}
+
+interface GroupFileMessage {
+  group_id: number
+  file: string
+  name: string
+}
+
 function isPrivate(data: any): data is PrivateMessage {
   return data.message_type && data.message_type === 'private'
 }
@@ -126,6 +138,8 @@ export {
   GroupNotifyMessage,
   GroupMessageParams,
   PrivateMessageParams,
+  GroupFileMessage,
+  PrivateFileMessage,
   isPrivate,
   isGroup,
   isGroupNotify,

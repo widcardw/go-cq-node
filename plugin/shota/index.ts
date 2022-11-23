@@ -1,10 +1,29 @@
 // import type { Bhttp, Bws } from '../../types'
+import fg from 'fast-glob'
+import type { ImageMessage } from '../../types'
 import { isGroup, isPrivate } from '../../types'
 import { definePlugin } from '../../utils/define-plugin'
-import { getImage } from './service'
-
 let interval: NodeJS.Timer
 let notAbleToSend = false
+
+let pics: string[] = []
+let scanned = false
+
+async function scanPics() {
+  pics = await fg('/Users/leeocoy/Pictures/shota/*', { absolute: true })
+  scanned = true
+}
+
+function getImage(): ImageMessage {
+  const len = pics.length
+  const rand = Math.floor(len * Math.random())
+  return {
+    type: 'image',
+    data: {
+      file: `file://${pics[rand]}`,
+    },
+  }
+}
 
 const plugin = (valid?: {
   validGroups?: number[]
@@ -19,8 +38,30 @@ const plugin = (valid?: {
       return
 
     const message = data.message.trim()
+
+    if (/^(正太|shota) 刷新$/i.test(message)) {
+      await scanPics()
+      const m = `已刷新，共 ${pics.length} 张图片`
+      if (isGroup(data)) {
+        const { group_id } = data
+        ws.send('send_group_msg', {
+          group_id, message: m,
+        })
+      }
+      else if (isPrivate(data)) {
+        const { user_id } = data
+        ws.send('send_private_msg', {
+          user_id, message: m,
+        })
+      }
+      return
+    }
+
     if (message !== '正太' && message !== 'shota')
       return
+
+    if (!scanned)
+      await scanPics()
 
     if (isGroup(data)) {
       if (notAbleToSend) {
@@ -33,7 +74,7 @@ const plugin = (valid?: {
       ws.send('send_group_msg', {
         group_id: data.group_id,
         message: [
-          await getImage(),
+          getImage(),
         ],
       })
     }
@@ -48,7 +89,7 @@ const plugin = (valid?: {
       ws.send('send_private_msg', {
         user_id: data.user_id,
         message: [
-          await getImage(),
+          getImage(),
         ],
       })
     }
