@@ -8,7 +8,7 @@ import Xibao from './plugin/xibao'
 
 defineConfig({
   plugins: [
-    Shota({
+    Shota('/Users/leeocoy/Pictures/shota/*', {
       validGroupUsers: [],
       validGroups: Object.values(groups),
     }),

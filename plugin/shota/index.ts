@@ -9,8 +9,8 @@ let notAbleToSend = false
 let pics: string[] = []
 let scanned = false
 
-async function scanPics() {
-  pics = await fg('/Users/leeocoy/Pictures/shota/*', { absolute: true })
+async function scanPics(path: string) {
+  pics = await fg(path, { absolute: true })
   scanned = true
 }
 
@@ -25,11 +25,14 @@ function getImage(): ImageMessage {
   }
 }
 
-const plugin = (valid?: {
-  validGroups?: number[]
-  validGroupUsers?: number[]
-  validPrivate?: number[]
-}) => definePlugin({
+const plugin = (
+  assetPath: string,
+  valid?: {
+    validGroups?: number[]
+    validGroupUsers?: number[]
+    validPrivate?: number[]
+  },
+) => definePlugin({
   name: 'shota',
   desc: '发送正太图片',
   ...valid,
@@ -40,7 +43,7 @@ const plugin = (valid?: {
     const message = data.message.trim()
 
     if (/^(正太|shota) 刷新$/i.test(message)) {
-      await scanPics()
+      await scanPics(assetPath)
       const m = `已刷新，共 ${pics.length} 张图片`
       if (isGroup(data)) {
         const { group_id } = data
@@ -61,7 +64,7 @@ const plugin = (valid?: {
       return
 
     if (!scanned)
-      await scanPics()
+      await scanPics(assetPath)
 
     if (isGroup(data)) {
       if (notAbleToSend) {

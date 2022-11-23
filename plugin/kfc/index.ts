@@ -4,7 +4,7 @@ import { isGroup } from '../../types'
 import { definePlugin } from '../../utils/define-plugin'
 
 const pattern = /^(!|！)kfc$/i
-const pattern2 = /^sudo kfc$/i
+const pattern2 = /^sudo kfc([\s\S]+)?$/i
 
 export default definePlugin({
   name: '!KFC',

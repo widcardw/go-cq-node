@@ -37,10 +37,12 @@ export default (validGroups?: number[]) => definePlugin({
         return
 
       const textContent = match[1]
-      if (!/[\u4E00-\u9FA5]|[A-Za-z\d]/g.test(textContent)) {
+      if (!/[\u4E00-\u9FA5]|[A-Za-z\d]/g.test(textContent)
+          || textContent.includes('[CQ:at')
+          || textContent.includes('[CQ:face')) {
         ws.send('send_group_msg', {
           group_id: data.group_id,
-          message: '请至少带有一个有意义的字符谢谢',
+          message: '请不要乱写谢谢',
         })
         return
       }
@@ -64,7 +66,7 @@ function getFontSize(text: string, ctx: CanvasRenderingContext2D) {
   let maxFontSize = 99999
   for (const s of slices) {
     const w = ctx.measureText(s).width
-    const tempSize = width / w * 56
+    const tempSize = (width - 20) / w * 56
     if (tempSize < maxFontSize)
       maxFontSize = tempSize
   }

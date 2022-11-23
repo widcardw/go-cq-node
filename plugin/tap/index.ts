@@ -3,7 +3,7 @@ import { isGroup, isGroupNotify } from '../../types'
 import { definePlugin } from '../../utils/define-plugin'
 
 const pattern = /^[摸拍挠戳]正太(头|脑袋)?$/
-const pattern2 = /^[揉拍挠摸戳舔]正太[蛋淡〇即鸡唧]{2,}$/
+const pattern2 = /^[揉拍挠摸戳舔捏]正太[蛋淡〇即鸡唧]{2,}$/
 
 const m = [
   '会长不高的呜呜',

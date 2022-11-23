@@ -18,6 +18,24 @@ interface CqtsConfig {
 
 type RestrictedCqtsConfig = Required<CqtsConfig>
 
+const pageSize = 10
+
+function getPluginInfo(plugins: PluginType[], page: number): string {
+  if (Number.isNaN(page) || page === 0) {
+    let info = plugins.slice(0, pageSize).map((p, index) => {
+      return `${index + 1}. ${p.name}: ${p.desc}`
+    }).join('\n')
+    if (plugins.length > pageSize)
+      info += '\n更多内容请添加页码参数'
+    return info
+  }
+  if ((page - 1) * pageSize > plugins.length)
+    return '没有更多了'
+  return plugins.slice((page - 1) * pageSize, pageSize * page).map((p, index) => {
+    return `${index + 1 + (page - 1) * pageSize}. ${p.name}: ${p.desc}`
+  }).join('\n')
+}
+
 function defineConfig(config: CqtsConfig) {
   const resolvedConfig: RestrictedCqtsConfig = {
     processor: 'ws',
@@ -28,9 +46,6 @@ function defineConfig(config: CqtsConfig) {
     url: 'ws://0.0.0.0:6700',
     ...config,
   }
-  const pluginInfo = resolvedConfig.plugins.map((p, index) => {
-    return `${index + 1}. ${p.name}: ${p.desc}`
-  })
   if (resolvedConfig.processor === 'ws') {
     const ws = createWs(resolvedConfig.url)
     ws.listen((data: PrivateMessage | GroupMessage | any) => {
@@ -48,10 +63,11 @@ function defineConfig(config: CqtsConfig) {
             return
         }
 
-        if (/^(正太|shota) help$/i.test(data.message.trim())) {
+        const match = data.message.trim().match(/^(正太|shota) help(\s+)?(\d+)?$/i)
+        if (match) {
           ws.send('send_group_msg', {
             group_id: data.group_id,
-            message: pluginInfo.join('\n'),
+            message: getPluginInfo(resolvedConfig.plugins, Number(match[3])),
           })
         }
       }
@@ -62,10 +78,11 @@ function defineConfig(config: CqtsConfig) {
             return
         }
 
-        if (/^(正太|shota) help$/i.test(data.message.trim())) {
+        const match = data.message.trim().match(/^(正太|shota) help(\s+)?(\d+)?$/i)
+        if (match) {
           ws.send('send_private_msg', {
             user_id: data.user_id,
-            message: pluginInfo.join('\n'),
+            message: getPluginInfo(resolvedConfig.plugins, Number(match[3])),
           })
         }
       }
