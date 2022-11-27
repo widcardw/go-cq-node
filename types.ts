@@ -1,7 +1,4 @@
-interface Bws {
-  listen: (callback: (o: any) => void) => void
-  send: (action: string, params: GroupMessageParams | PrivateMessageParams | PrivateFileMessage | GroupFileMessage) => void
-}
+type SendActions = 'send_private_msg' | 'send_group_msg' | 'upload_private_file' | 'upload_group_file'
 
 interface Bhttp {
   send: (action: string, params: any) => Promise<any>
@@ -127,7 +124,6 @@ function isGroupNotify(data: any): data is GroupNotifyMessage {
 }
 
 export {
-  Bws,
   Bhttp,
   PrivateMessage,
   GroupMessage,
@@ -140,6 +136,7 @@ export {
   PrivateMessageParams,
   GroupFileMessage,
   PrivateFileMessage,
+  SendActions,
   isPrivate,
   isGroup,
   isGroupNotify,

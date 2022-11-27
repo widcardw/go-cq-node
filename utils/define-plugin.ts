@@ -1,9 +1,10 @@
-import type { Bhttp, Bws, GroupMessage, GroupNotifyMessage, PrivateMessage } from '../types'
+import type { MyWs } from '../bot/ws'
+import type { Bhttp, GroupMessage, GroupNotifyMessage, PrivateMessage } from '../types'
 import { isGroup, isPrivate } from '../types'
 
 interface FuncParamsWs {
   data: PrivateMessage | GroupMessage | GroupNotifyMessage | any
-  ws: Bws
+  ws: MyWs
   http?: Bhttp
   // type: '__FuncParamsWs'
 }
@@ -11,7 +12,7 @@ interface FuncParamsWs {
 // interface FuncParamsHttp {
 //   data: PrivateMessage | GroupMessage | any
 //   http: Bhttp
-//   ws?: Bws
+//   ws?: MyWs
 //   type: '__FuncParamsHttp'
 // }
 

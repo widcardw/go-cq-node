@@ -1,26 +1,33 @@
 import WebSocket from 'ws'
-// import { bot } from '../config'
-import type { Bws, GroupFileMessage, GroupMessageParams, PrivateFileMessage, PrivateMessageParams } from '../types'
+import type { GroupFileMessage, GroupMessageParams, PrivateFileMessage, PrivateMessageParams, SendActions } from '../types'
 
-export default function createWs(url: string) {
-  const ws = new WebSocket(url)
+export class MyWs {
+  ws: WebSocket
 
-  const wws: Bws = {
-    send(action: string, params: GroupMessageParams | PrivateMessageParams | PrivateFileMessage | GroupFileMessage) {
-      ws.send(JSON.stringify({ action, params }))
-    },
-    listen(callback: (o: any) => void) {
-      ws.on('message', (data: string) => {
-        try {
-          callback(JSON.parse(data))
-        }
-        catch (e) {
-          console.error(e)
-        }
-      })
-    },
+  constructor(url: string) {
+    this.ws = new WebSocket(url)
   }
-  return wws
+
+  listen(callback: (o: any) => void) {
+    this.ws.on('message', (data: any) => {
+      try {
+        callback(JSON.parse(data))
+      }
+      catch (e) {
+        console.error(e)
+      }
+    })
+  }
+
+  send(action: 'send_private_msg', params: PrivateMessageParams): void
+  send(action: 'send_group_msg', params: GroupMessageParams): void
+  send(action: 'upload_private_file', params: PrivateFileMessage): void
+  send(action: 'upload_group_file', params: GroupFileMessage): void
+  send(action: SendActions, params: PrivateMessageParams | GroupMessageParams | PrivateFileMessage | GroupFileMessage) {
+    this.ws.send(JSON.stringify({ action, params }))
+  }
 }
 
-// export default wws
+export default function createWs(url: string) {
+  return new MyWs(url)
+}

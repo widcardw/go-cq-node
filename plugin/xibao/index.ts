@@ -5,7 +5,7 @@ import type { CanvasRenderingContext2D } from 'canvas'
 import { createCanvas, loadImage, registerFont } from 'canvas'
 import { definePlugin } from '../../utils/define-plugin'
 import type { ImageMessage } from '../../types'
-import { isGroup } from '../../types'
+import { isGroup, isPrivate } from '../../types'
 
 const pattern = /^\/喜报 ([\s\S]+)$/
 const width = 650
@@ -20,7 +20,27 @@ export default (validGroups?: number[]) => definePlugin({
   async setup({ data, ws }) {
     if (!data.message)
       return
-    if (isGroup(data)) {
+    if (isPrivate(data)) {
+      if (notAbleToSend) {
+        ws.send('send_private_msg', {
+          user_id: data.user_id,
+          message: '你先别急',
+        })
+        return
+      }
+
+      const match = data.message.match(pattern)
+      if (!match)
+        return
+
+      const textContent = match[1]
+
+      ws.send('send_private_msg', {
+        user_id: data.user_id,
+        message: await service(textContent),
+      })
+    }
+    else if (isGroup(data)) {
       if (validGroups?.length && !validGroups.includes(data.group_id))
         return
 
@@ -47,17 +67,24 @@ export default (validGroups?: number[]) => definePlugin({
         return
       }
 
+      if (textContent.includes('CQ:image')) {
+        ws.send('send_group_msg', {
+          group_id: data.group_id,
+          message: '目前不支持图片',
+        })
+        return
+      }
+
       ws.send('send_group_msg', {
         group_id: data.group_id,
         message: await service(textContent),
       })
-
-      notAbleToSend = true
-      interval = setTimeout(() => {
-        clearInterval(interval)
-        notAbleToSend = false
-      }, 5000)
     }
+    notAbleToSend = true
+    interval = setTimeout(() => {
+      clearInterval(interval)
+      notAbleToSend = false
+    }, 5000)
   },
 })
 
@@ -72,6 +99,8 @@ function getFontSize(text: string, ctx: CanvasRenderingContext2D) {
   }
   if (maxFontSize > 56)
     maxFontSize = 56
+  if (maxFontSize < 10)
+    maxFontSize = 10
   return maxFontSize
 }
 
@@ -111,7 +140,7 @@ export async function service(text: string): Promise<ImageMessage> {
 
     const fixed = fontSize.toFixed(0)
 
-    ctx.font = `${fixed !== '0' ? fixed : 10}px HanYiZhongLiShuJian-1`
+    ctx.font = `${fixed}px HanYiZhongLiShuJian-1`
 
     const { x, y, slices } = assumePosition(text, ctx, fontSize)
 
