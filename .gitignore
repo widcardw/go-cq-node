@@ -13,3 +13,4 @@ plugin/*/db.sqlite
 private/
 send_file/
 tsx/
+mock/

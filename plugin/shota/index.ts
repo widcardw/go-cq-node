@@ -51,116 +51,153 @@ const plugin = (
 
     const message = data.message.trim()
 
-    if (/^(正太|shota) (刷新|refresh)$/i.test(message)) {
-      await scanPics(assetPath)
-      const m = `已刷新，共 ${pics.length} 张图片`
-      if (isGroup(data)) {
-        const { group_id } = data
-        ws.send('send_group_msg', {
-          group_id, message: m,
-        })
+    try {
+      if (/^(正太|shota) (刷新|refresh)$/i.test(message)) {
+        await scanPics(assetPath)
+        const m = `已刷新，共 ${pics.length} 张图片`
+        if (isGroup(data)) {
+          const { group_id } = data
+          ws.send('send_group_msg', {
+            group_id, message: m,
+          })
+        }
+        else if (isPrivate(data)) {
+          const { user_id } = data
+          ws.send('send_private_msg', {
+            user_id, message: m,
+          })
+        }
+        return
       }
-      else if (isPrivate(data)) {
-        const { user_id } = data
-        ws.send('send_private_msg', {
-          user_id, message: m,
-        })
-      }
-      return
-    }
 
-    if (/^(正太|shota) (保存|save)([\s\S]+)?$/i.test(message)) {
-      const matches = message.match(urlPattern) as string[]
-      if (!matches) {
+      if (/^(正太|shota) (保存|save)([\s\S]+)?$/i.test(message)) {
+        const matches = message.match(urlPattern) as string[]
+        if (!matches) {
+          if (isGroup(data)) {
+            ws.send('send_group_msg', {
+              group_id: data.group_id,
+              message: '暂不支持“图呢”',
+            })
+          }
+          else if (isPrivate(data)) {
+            ws.send('send_private_msg', {
+              user_id: data.user_id,
+              message: '暂不支持“图呢”',
+            })
+          }
+          return
+        }
+        const urls = matches.map((s) => {
+          return s.match(/\[CQ:image,file=([^\]]+?),url=([^\]]+?)\]$/)?.[2]
+        }).filter(Boolean) as string[]
+
+        const tempList: string[] = []
+        await Promise.all(urls.map(async (url) => {
+          // get the hash id
+          const filename = `${url.split('/')[5].split('-')[2]}.jpg` || `shota-${nanoid(13)}.jpg`
+          // find if it is already in picture list
+          const found = pics.find(it => it.includes(filename))
+          if (found) {
+            if (isGroup(data)) {
+              ws.send('send_group_msg', {
+                group_id: data.group_id,
+                message: `图片 ${filename} 已存在`,
+              })
+            }
+            else if (isPrivate(data)) {
+              ws.send('send_private_msg', {
+                user_id: data.user_id,
+                message: `图片 ${filename} 已存在`,
+              })
+            }
+            return
+          }
+          // fetch the picture data
+          const response = await axios({ url, responseType: 'stream' })
+          const absPath = join(removeStar(assetPath), filename)
+          await fsp.writeFile(absPath, response.data)
+          tempList.push(filename)
+        }))
+        pics.push(...(tempList.map((filename) => {
+          const absPath = join(removeStar(assetPath), filename)
+          return absPath
+        })))
+
+        // reply
+        if (tempList.length === 0)
+          return
         if (isGroup(data)) {
           ws.send('send_group_msg', {
             group_id: data.group_id,
-            message: '暂不支持“图呢”',
+            message: `已保存 ${tempList.join('\n')}`,
           })
         }
         else if (isPrivate(data)) {
           ws.send('send_private_msg', {
             user_id: data.user_id,
-            message: '暂不支持“图呢”',
+            message: `已保存 ${tempList.join('\n')}`,
           })
         }
         return
       }
-      const urls = matches.map((s) => {
-        return s.match(/\[CQ:image,file=([^\]]+?),url=([^\]]+?)\]$/)?.[2]
-      }).filter(Boolean) as string[]
 
-      const tempList: string[] = []
-      await Promise.all(urls.map(async (url) => {
-        const response = await axios({ url, responseType: 'stream' })
-        const filename = `shota-${nanoid(13)}.jpg`
-        const absPath = join(removeStar(assetPath), filename)
-        await fsp.writeFile(absPath, response.data)
-        tempList.push(filename)
-      }))
-      pics.push(...tempList)
-      // const response = await axios({ url, responseType: 'stream' })
-      // const filename = `go-cq-shota-${Date.now()}.jpg`
-      // const absPath = join(removeStar(assetPath), filename)
-      // await fsp.writeFile(absPath, response.data)
-      // pics.push(absPath)
+      if (message !== '正太' && message !== 'shota')
+        return
+
+      if (!scanned)
+        await scanPics(assetPath)
+
+      if (isGroup(data)) {
+        if (notAbleToSend) {
+          ws.send('send_group_msg', {
+            group_id: data.group_id,
+            message: '你先别急',
+          })
+          return
+        }
+        ws.send('send_group_msg', {
+          group_id: data.group_id,
+          message: [
+            getImage(),
+          ],
+        })
+      }
+      else if (isPrivate(data)) {
+        if (notAbleToSend) {
+          ws.send('send_private_msg', {
+            user_id: data.user_id,
+            message: '你先别急',
+          })
+          return
+        }
+        ws.send('send_private_msg', {
+          user_id: data.user_id,
+          message: [
+            getImage(),
+          ],
+        })
+      }
+
+      notAbleToSend = true
+      interval = setTimeout(() => {
+        clearInterval(interval)
+        notAbleToSend = false
+      }, 8000)
+    }
+    catch (e) {
       if (isGroup(data)) {
         ws.send('send_group_msg', {
           group_id: data.group_id,
-          message: `已保存 ${tempList.join('\n')}`,
+          message: String(e),
         })
       }
       else if (isPrivate(data)) {
         ws.send('send_private_msg', {
           user_id: data.user_id,
-          message: `已保存 ${tempList.join('\n')}`,
+          message: String(e),
         })
       }
-      return
     }
-
-    if (message !== '正太' && message !== 'shota')
-      return
-
-    if (!scanned)
-      await scanPics(assetPath)
-
-    if (isGroup(data)) {
-      if (notAbleToSend) {
-        ws.send('send_group_msg', {
-          group_id: data.group_id,
-          message: '你先别急',
-        })
-        return
-      }
-      ws.send('send_group_msg', {
-        group_id: data.group_id,
-        message: [
-          getImage(),
-        ],
-      })
-    }
-    else if (isPrivate(data)) {
-      if (notAbleToSend) {
-        ws.send('send_private_msg', {
-          user_id: data.user_id,
-          message: '你先别急',
-        })
-        return
-      }
-      ws.send('send_private_msg', {
-        user_id: data.user_id,
-        message: [
-          getImage(),
-        ],
-      })
-    }
-
-    notAbleToSend = true
-    interval = setTimeout(() => {
-      clearInterval(interval)
-      notAbleToSend = false
-    }, 8000)
   },
 })
 
