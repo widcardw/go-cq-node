@@ -6,6 +6,11 @@ import { definePlugin } from '../../utils/define-plugin'
 const pattern = /^(!|！)kfc$/i
 const pattern2 = /^sudo kfc([\s\S]+)?$/i
 
+const ben = [
+  '笨！',
+  '为什么用全角！',
+]
+
 export default definePlugin({
   name: '!KFC',
   desc: '肯德基疯狂星期四',
@@ -22,6 +27,14 @@ export default definePlugin({
       if (!pattern2.test(message)) {
         if (!pattern.test(message))
           return
+
+        if (message.startsWith('！')) {
+          ws.send('send_group_msg', {
+            group_id: data.group_id,
+            message: ben[Math.floor(Math.random() * ben.length)],
+          })
+          return
+        }
 
         if (new Date().getDay() !== 4) {
           ws.send('send_group_msg', {

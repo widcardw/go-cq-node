@@ -21,6 +21,10 @@ export default (validGroups?: number[]) => definePlugin({
     if (!data.message)
       return
     if (isPrivate(data)) {
+      const match = data.message.match(pattern)
+      if (!match)
+        return
+
       if (notAbleToSend) {
         ws.send('send_private_msg', {
           user_id: data.user_id,
@@ -28,10 +32,6 @@ export default (validGroups?: number[]) => definePlugin({
         })
         return
       }
-
-      const match = data.message.match(pattern)
-      if (!match)
-        return
 
       const textContent = match[1]
 
@@ -44,6 +44,10 @@ export default (validGroups?: number[]) => definePlugin({
       if (validGroups?.length && !validGroups.includes(data.group_id))
         return
 
+      const match = data.message.match(pattern)
+      if (!match)
+        return
+
       if (notAbleToSend) {
         ws.send('send_group_msg', {
           group_id: data.group_id,
@@ -51,10 +55,6 @@ export default (validGroups?: number[]) => definePlugin({
         })
         return
       }
-
-      const match = data.message.match(pattern)
-      if (!match)
-        return
 
       const textContent = match[1]
       if (!/[\u4E00-\u9FA5]|[A-Za-z\d]/g.test(textContent)
