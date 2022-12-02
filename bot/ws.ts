@@ -1,5 +1,6 @@
 import WebSocket from 'ws'
-import type { GroupFileMessage, GroupMessageParams, PrivateFileMessage, PrivateMessageParams, SendActions } from '../types'
+import type { GetMessageParams, GroupFileMessage, GroupMessageParams, PrivateFileMessage, PrivateMessageParams, SendActions } from '../types'
+// import { isGetMessageParams } from '../types'
 
 export class MyWs {
   ws: WebSocket
@@ -23,7 +24,15 @@ export class MyWs {
   send(action: 'send_group_msg', params: GroupMessageParams): void
   send(action: 'upload_private_file', params: PrivateFileMessage): void
   send(action: 'upload_group_file', params: GroupFileMessage): void
-  send(action: SendActions, params: PrivateMessageParams | GroupMessageParams | PrivateFileMessage | GroupFileMessage) {
+  send(action: 'get_msg', params: GetMessageParams): void /* Promise<{
+    message_id: number
+    real_id: number
+    sender: any
+    time: number
+    message: string
+    raw_message: string
+  }> */
+  send(action: SendActions, params: PrivateMessageParams | GroupMessageParams | PrivateFileMessage | GroupFileMessage | GetMessageParams) {
     this.ws.send(JSON.stringify({ action, params }))
   }
 }

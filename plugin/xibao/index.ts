@@ -20,71 +20,67 @@ export default (validGroups?: number[]) => definePlugin({
   async setup({ data, ws }) {
     if (!data.message)
       return
-    if (isPrivate(data)) {
-      const match = data.message.match(pattern)
-      if (!match)
-        return
+    try {
+      if (isPrivate(data)) {
+        const match = data.message.match(pattern)
+        if (!match)
+          return
 
-      if (notAbleToSend) {
+        if (notAbleToSend)
+          throw new Error('你先别急')
+
+        const textContent = match[1]
+
         ws.send('send_private_msg', {
           user_id: data.user_id,
-          message: '你先别急',
+          message: await service(textContent),
         })
-        return
       }
+      else if (isGroup(data)) {
+        if (validGroups?.length && !validGroups.includes(data.group_id))
+          return
 
-      const textContent = match[1]
+        const match = data.message.match(pattern)
+        if (!match)
+          return
 
-      ws.send('send_private_msg', {
-        user_id: data.user_id,
-        message: await service(textContent),
-      })
-    }
-    else if (isGroup(data)) {
-      if (validGroups?.length && !validGroups.includes(data.group_id))
-        return
+        if (notAbleToSend)
+          throw new Error('你先别急')
 
-      const match = data.message.match(pattern)
-      if (!match)
-        return
-
-      if (notAbleToSend) {
-        ws.send('send_group_msg', {
-          group_id: data.group_id,
-          message: '你先别急',
-        })
-        return
-      }
-
-      const textContent = match[1]
-      if (!/[\u4E00-\u9FA5]|[A-Za-z\d]/g.test(textContent)
+        const textContent = match[1]
+        if (!/[\u4E00-\u9FA5]|[A-Za-z\d]/g.test(textContent)
           || textContent.includes('[CQ:at')
-          || textContent.includes('[CQ:face')) {
+          || textContent.includes('[CQ:face'))
+          throw new Error('请不要乱写谢谢')
+
+        if (textContent.includes('CQ:image'))
+          throw new Error('目前不支持图片')
+
         ws.send('send_group_msg', {
           group_id: data.group_id,
-          message: '请不要乱写谢谢',
+          message: await service(textContent),
         })
-        return
       }
-
-      if (textContent.includes('CQ:image')) {
-        ws.send('send_group_msg', {
-          group_id: data.group_id,
-          message: '目前不支持图片',
-        })
-        return
-      }
-
-      ws.send('send_group_msg', {
-        group_id: data.group_id,
-        message: await service(textContent),
-      })
+      notAbleToSend = true
+      interval = setTimeout(() => {
+        clearInterval(interval)
+        notAbleToSend = false
+      }, 5000)
     }
-    notAbleToSend = true
-    interval = setTimeout(() => {
-      clearInterval(interval)
-      notAbleToSend = false
-    }, 5000)
+    catch (e: any) {
+      if (isGroup(data)) {
+        ws.send('send_group_msg', {
+          group_id: data.group_id,
+          message: e.message || String(e),
+        })
+      }
+      else if (isPrivate(data)) {
+        ws.send('send_private_msg', {
+          user_id: data.user_id,
+          message: e.message || String(e),
+        })
+      }
+    }
   },
 })
 

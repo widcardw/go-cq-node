@@ -1,4 +1,4 @@
-type SendActions = 'send_private_msg' | 'send_group_msg' | 'upload_private_file' | 'upload_group_file'
+type SendActions = 'send_private_msg' | 'send_group_msg' | 'upload_private_file' | 'upload_group_file' | 'get_msg'
 
 interface Bhttp {
   send: (action: string, params: any) => Promise<any>
@@ -110,6 +110,15 @@ interface GroupFileMessage {
   name: string
 }
 
+interface GetMessageParams {
+  message_id: number
+}
+
+function isGetMessageParams(data: any): data is GetMessageParams {
+  const keys = Object.keys(data)
+  return keys.length === 1 && keys[0] === 'message_id'
+}
+
 function isPrivate(data: any): data is PrivateMessage {
   return data.message_type && data.message_type === 'private'
 }
@@ -134,10 +143,12 @@ export {
   GroupNotifyMessage,
   GroupMessageParams,
   PrivateMessageParams,
+  GetMessageParams,
   GroupFileMessage,
   PrivateFileMessage,
   SendActions,
   isPrivate,
   isGroup,
   isGroupNotify,
+  isGetMessageParams,
 }

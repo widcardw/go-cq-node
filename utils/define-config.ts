@@ -90,7 +90,7 @@ function defineConfig(config: CqtsConfig) {
       if (process.env.NODE_ENV === 'development') {
         if (data.post_type !== 'meta_event' && data.meta_event_type !== 'heartbeat')
         // eslint-disable-next-line no-console
-          console.log(data)
+          console.log('这是 main 中打印的', data)
       }
 
       install(resolvedConfig.plugins, { data, ws })

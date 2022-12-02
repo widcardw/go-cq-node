@@ -6,8 +6,10 @@ import { nanoid } from 'nanoid'
 import type { ImageMessage } from '../../types'
 import { isGroup, isPrivate } from '../../types'
 import { definePlugin } from '../../utils/define-plugin'
+import type { MyWs } from '../../bot/ws'
 let interval: NodeJS.Timer
 let notAbleToSend = false
+let cache: any = null
 
 let pics: string[] = []
 let scanned = false
@@ -17,10 +19,16 @@ function removeStar(path: string) {
 }
 
 const urlPattern = /\[CQ:image,file=([^\]]+?),url=([^\]]+?)\]/g
+const singlePicPattern = /\[CQ:image,file=([^\]]+?),url=([^\]]+?)\]$/
+const replySavePattern = /^\[CQ:reply,id=([-\d]+)\][\s\S]*shota save$/
 
 async function scanPics(path: string) {
   pics = await fg(path, { absolute: true })
   scanned = true
+}
+
+function errorsToString(errs: any[]) {
+  return errs.map(it => ((it as any).reason as string)).join('\n')
 }
 
 function getImage(): ImageMessage {
@@ -32,6 +40,61 @@ function getImage(): ImageMessage {
       file: `file://${pics[rand]}`,
     },
   }
+}
+
+function replySave(ws: MyWs, message: string, data: any) {
+  if (isGroup(data)) {
+    ws.send('send_group_msg', {
+      group_id: data.group_id,
+      message,
+    })
+  }
+  else if (isPrivate(data)) {
+    ws.send('send_private_msg', {
+      user_id: data.user_id,
+      message,
+    })
+  }
+}
+
+async function savePics(message: string, assetPath: string) {
+  const matches = message.match(urlPattern)
+  if (!matches)
+    return Promise.reject(new Error('没有检测到图片'))
+  const urls = matches.map((s) => {
+    return s.match(singlePicPattern)?.[2]
+  }).filter(Boolean) as string[]
+  console.warn(urls)
+
+  const tempList: string[] = []
+  const existPics = (await Promise.allSettled(urls.map(async (url) => {
+    // get the hash id
+    const splits = url.split('/')
+    let name = splits[5].split('-')[2]
+    if (!name)
+      name = splits[6].split('-')[2]
+    if (!name)
+      name = nanoid(13)
+    const filename = `${name}.jpg`
+    // find if it is already in picture list
+    const found = pics.find(it => it.includes(filename))
+    if (found) {
+      console.warn(`图片 ${filename} 已存在`)
+      throw new Error(`图片 ${filename} 已存在`)
+    }
+
+    // fetch the picture data
+    const response = await axios({ url, responseType: 'stream' })
+    const absPath = join(removeStar(assetPath), filename)
+    await fsp.writeFile(absPath, response.data)
+    tempList.push(filename)
+  }))).filter(it => it.status === 'rejected')
+
+  tempList.forEach((filename) => {
+    pics.push(join(removeStar(assetPath), filename))
+  })
+
+  return [tempList, existPics]
 }
 
 const plugin = (
@@ -46,115 +109,68 @@ const plugin = (
   desc: '发送正太图片',
   ...valid,
   async setup({ data, ws }) {
-    if (!data.message)
-      return
-
-    const message = data.message.trim()
-
     try {
-      if (/^(正太|shota) (刷新|refresh)$/i.test(message)) {
+      if (!scanned) {
         await scanPics(assetPath)
-        const m = `已刷新，共 ${pics.length} 张图片`
-        if (isGroup(data)) {
-          const { group_id } = data
-          ws.send('send_group_msg', {
-            group_id, message: m,
-          })
-        }
-        else if (isPrivate(data)) {
-          const { user_id } = data
-          ws.send('send_private_msg', {
-            user_id, message: m,
-          })
-        }
+        console.warn('共 ', pics.length)
+      }
+
+      if (data?.data?.message && cache) {
+        const message = data.data.message as string
+
+        const [tempList, existPics] = await savePics(message, assetPath)
+
+        // reply
+        if (tempList.length > 0)
+          replySave(ws, `已保存 ${tempList.join('\n')}`, cache)
+
+        if (existPics.length > 0)
+          throw new Error(errorsToString(existPics))
+        cache = null
         return
       }
 
-      if (/^(正太|shota) (保存|save)([\s\S]+)?$/i.test(message)) {
-        const matches = message.match(urlPattern) as string[]
-        if (!matches) {
-          if (isGroup(data)) {
-            ws.send('send_group_msg', {
-              group_id: data.group_id,
-              message: '暂不支持“图呢”',
-            })
-          }
-          else if (isPrivate(data)) {
-            ws.send('send_private_msg', {
-              user_id: data.user_id,
-              message: '暂不支持“图呢”',
-            })
-          }
-          return
-        }
-        const urls = matches.map((s) => {
-          return s.match(/\[CQ:image,file=([^\]]+?),url=([^\]]+?)\]$/)?.[2]
-        }).filter(Boolean) as string[]
+      if (!data.message)
+        return
 
-        const tempList: string[] = []
-        await Promise.all(urls.map(async (url) => {
-          // get the hash id
-          const filename = `${url.split('/')[5].split('-')[2]}.jpg` || `shota-${nanoid(13)}.jpg`
-          // find if it is already in picture list
-          const found = pics.find(it => it.includes(filename))
-          if (found) {
-            if (isGroup(data)) {
-              ws.send('send_group_msg', {
-                group_id: data.group_id,
-                message: `图片 ${filename} 已存在`,
-              })
-            }
-            else if (isPrivate(data)) {
-              ws.send('send_private_msg', {
-                user_id: data.user_id,
-                message: `图片 ${filename} 已存在`,
-              })
-            }
-            return
-          }
-          // fetch the picture data
-          const response = await axios({ url, responseType: 'stream' })
-          const absPath = join(removeStar(assetPath), filename)
-          await fsp.writeFile(absPath, response.data)
-          tempList.push(filename)
-        }))
-        pics.push(...(tempList.map((filename) => {
-          const absPath = join(removeStar(assetPath), filename)
-          return absPath
-        })))
+      const message = data.message.trim()
+
+      if (/^(正太|shota) (刷新|refresh)$/i.test(message)) {
+        await scanPics(assetPath)
+        const m = `已刷新，共 ${pics.length} 张图片`
+        throw new Error(m)
+      }
+
+      if (/^(正太|shota) (保存|save)([\s\S]+)?$/i.test(message)) {
+        const [tempList, existPics] = await savePics(message, assetPath)
 
         // reply
-        if (tempList.length === 0)
-          return
-        if (isGroup(data)) {
-          ws.send('send_group_msg', {
-            group_id: data.group_id,
-            message: `已保存 ${tempList.join('\n')}`,
-          })
-        }
-        else if (isPrivate(data)) {
-          ws.send('send_private_msg', {
-            user_id: data.user_id,
-            message: `已保存 ${tempList.join('\n')}`,
-          })
-        }
+        if (tempList.length > 0)
+          replySave(ws, `已保存 ${tempList.join('\n')}`, data)
+        if (existPics.length > 0)
+          throw new Error(errorsToString(existPics))
         return
+      }
+
+      if (replySavePattern.test(message)) {
+        // console.warn('根据回复保存图片')
+        const msg_id = Number(message.match(replySavePattern)[1])
+        if (isNaN(msg_id))
+          throw new Error('消息 ID 不合法')
+
+        cache = data
+
+        // console.warn(msg_id)
+        ws.send('get_msg', { message_id: msg_id })
       }
 
       if (message !== '正太' && message !== 'shota')
         return
 
-      if (!scanned)
-        await scanPics(assetPath)
-
       if (isGroup(data)) {
-        if (notAbleToSend) {
-          ws.send('send_group_msg', {
-            group_id: data.group_id,
-            message: '你先别急',
-          })
-          return
-        }
+        if (notAbleToSend)
+          throw new Error('你先别急')
+
         ws.send('send_group_msg', {
           group_id: data.group_id,
           message: [
@@ -163,13 +179,9 @@ const plugin = (
         })
       }
       else if (isPrivate(data)) {
-        if (notAbleToSend) {
-          ws.send('send_private_msg', {
-            user_id: data.user_id,
-            message: '你先别急',
-          })
-          return
-        }
+        if (notAbleToSend)
+          throw new Error('你先别急')
+
         ws.send('send_private_msg', {
           user_id: data.user_id,
           message: [
@@ -184,18 +196,35 @@ const plugin = (
         notAbleToSend = false
       }, 8000)
     }
-    catch (e) {
-      if (isGroup(data)) {
-        ws.send('send_group_msg', {
-          group_id: data.group_id,
-          message: String(e),
-        })
+    catch (e: any) {
+      if (cache) {
+        if (isGroup(cache)) {
+          ws.send('send_group_msg', {
+            group_id: cache.group_id,
+            message: e.message || String(e),
+          })
+        }
+        else if (isPrivate(cache)) {
+          ws.send('send_private_msg', {
+            user_id: cache.user_id,
+            message: e.message || String(e),
+          })
+        }
+        cache = null
       }
-      else if (isPrivate(data)) {
-        ws.send('send_private_msg', {
-          user_id: data.user_id,
-          message: String(e),
-        })
+      else {
+        if (isGroup(data)) {
+          ws.send('send_group_msg', {
+            group_id: data.group_id,
+            message: e.message || String(e),
+          })
+        }
+        else if (isPrivate(data)) {
+          ws.send('send_private_msg', {
+            user_id: data.user_id,
+            message: e.message || String(e),
+          })
+        }
       }
     }
   },
