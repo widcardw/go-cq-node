@@ -14,6 +14,12 @@ const height = 487
 let interval: NodeJS.Timer
 let notAbleToSend = false
 
+function transformSymbols(s: string) {
+  return s.replaceAll(/&#(\d+?);/g, (...args) => {
+    return String.fromCharCode(Number(args[1]))
+  }).replaceAll(/&amp;/g, '&')
+}
+
 export default (validGroups?: number[]) => definePlugin({
   name: '喜报',
   desc: '生成喜报图片',
@@ -47,7 +53,7 @@ export default (validGroups?: number[]) => definePlugin({
         if (notAbleToSend)
           throw new Error('你先别急')
 
-        const textContent = match[1]
+        let textContent = match[1]
         if (!/[\u4E00-\u9FA5]|[A-Za-z\d]/g.test(textContent)
           || textContent.includes('[CQ:at')
           || textContent.includes('[CQ:face'))
@@ -56,6 +62,7 @@ export default (validGroups?: number[]) => definePlugin({
         if (textContent.includes('CQ:image'))
           throw new Error('目前不支持图片')
 
+        textContent = transformSymbols(textContent)
         ws.send('send_group_msg', {
           group_id: data.group_id,
           message: await service(textContent),
