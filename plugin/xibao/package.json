@@ -1,4 +1,6 @@
 {
+  "type": "module",
+  "main": "index.ts",
   "devDependencies": {
     "canvas": "^2.10.2"
   }

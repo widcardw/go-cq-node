@@ -6,8 +6,8 @@ import { install } from './define-plugin'
 
 interface CqtsConfig {
   /**
-     * @default 'ws'
-     */
+   * @default 'ws'
+   */
   processor?: 'ws' | 'http'
   plugins?: PluginType[]
   validGroups?: number[]
@@ -21,6 +21,9 @@ type RestrictedCqtsConfig = Required<CqtsConfig>
 const pageSize = 10
 
 function getPluginInfo(plugins: PluginType[], page: number): string {
+  if (plugins.length === 0)
+    return '暂时没有安装插件捏'
+
   if (Number.isNaN(page) || page === 0) {
     let info = plugins.slice(0, pageSize).map((p, index) => {
       return `${index + 1}. ${p.name}: ${p.desc}`
@@ -87,11 +90,9 @@ function defineConfig(config: CqtsConfig) {
         }
       }
 
-      if (process.env.NODE_ENV === 'development') {
-        if (data.post_type !== 'meta_event' && data.meta_event_type !== 'heartbeat')
+      if (data.post_type !== 'meta_event' && data.meta_event_type !== 'heartbeat')
         // eslint-disable-next-line no-console
-          console.log('这是 main 中打印的', data)
-      }
+        console.log(data)
 
       install(resolvedConfig.plugins, { data, ws })
     })

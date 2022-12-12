@@ -1,4 +1,6 @@
 {
+  "type": "module",
+  "main": "index.ts",
   "devDependencies": {
     "fast-glob": "^3.2.12",
     "nanoid": "3.3.4"
