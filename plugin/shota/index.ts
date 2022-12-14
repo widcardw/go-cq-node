@@ -1,8 +1,8 @@
-import fsp from 'fs/promises'
 import { join } from 'path'
 import axios from 'axios'
 import fg from 'fast-glob'
 import { nanoid } from 'nanoid'
+import sharp from 'sharp'
 import type { ImageMessage } from '../../types'
 import { isGroup, isPrivate } from '../../types'
 import { definePlugin } from '../../utils/define-plugin'
@@ -57,6 +57,19 @@ function replySave(ws: MyWs, message: string, data: any) {
   }
 }
 
+async function sharpPicture(buffer: Buffer, absPath: string): Promise<sharp.OutputInfo> {
+  return new Promise((resolve, reject) => {
+    sharp(Buffer.from(buffer))
+      .webp({ quality: 60 })
+      .toFile(absPath, (err, info) => {
+        if (err)
+          reject(info)
+        else
+          resolve(info)
+      })
+  })
+}
+
 async function savePics(message: string, assetPath: string) {
   const matches = message.match(urlPattern)
   if (!matches)
@@ -75,7 +88,7 @@ async function savePics(message: string, assetPath: string) {
       name = splits[6].split('-')[2]
     if (!name)
       name = nanoid(13)
-    const filename = `${name}.jpg`
+    const filename = `${name}.webp`
     // find if it is already in picture list
     const found = pics.find(it => it.includes(filename))
     if (found) {
@@ -84,9 +97,10 @@ async function savePics(message: string, assetPath: string) {
     }
 
     // fetch the picture data
-    const response = await axios({ url, responseType: 'stream' })
+    const response = await axios({ url, responseType: 'arraybuffer' })
     const absPath = join(removeStar(assetPath), filename)
-    await fsp.writeFile(absPath, response.data)
+    // await fsp.writeFile(absPath, response.data)
+    await sharpPicture(response.data, absPath)
     tempList.push(filename)
   }))).filter(it => it.status === 'rejected')
 
