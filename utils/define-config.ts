@@ -94,7 +94,23 @@ function defineConfig(config: CqtsConfig) {
         // eslint-disable-next-line no-console
         console.log(data)
 
-      install(resolvedConfig.plugins, { data, ws })
+      try {
+        install(resolvedConfig.plugins, { data, ws })
+      }
+      catch (e) {
+        if (isGroup(data)) {
+          ws.send('send_group_msg', {
+            group_id: data.group_id,
+            message: String(e),
+          })
+        }
+        else if (isPrivate(data)) {
+          ws.send('send_private_msg', {
+            user_id: data.user_id,
+            message: String(e),
+          })
+        }
+      }
     })
   }
 }

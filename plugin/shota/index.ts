@@ -27,8 +27,17 @@ async function scanPics(path: string) {
   scanned = true
 }
 
-function errorsToString(errs: any[]) {
-  return errs.map(it => ((it as any).reason as string)).join('\n')
+function getReplyMessage(savedPics: string[], existPics: string[]): string {
+  let replyMessage = ''
+  if (savedPics.length > 0)
+    replyMessage += `已保存 ${savedPics.join('\n')}`
+  if (replyMessage !== '')
+    replyMessage += '\n\n'
+  if (existPics.length > 0)
+    replyMessage += `${existPics.join('\n')} 已存在`
+  if (replyMessage.trim() === '')
+    replyMessage = '什么都没保存捏'
+  return replyMessage
 }
 
 function getImage(): ImageMessage {
@@ -70,7 +79,7 @@ async function sharpPicture(buffer: Buffer, absPath: string): Promise<sharp.Outp
   })
 }
 
-async function savePics(message: string, assetPath: string) {
+async function savePics(message: string, assetPath: string): Promise<[string[], string[]]> {
   const matches = message.match(urlPattern)
   if (!matches)
     return Promise.reject(new Error('没有检测到图片'))
@@ -79,8 +88,7 @@ async function savePics(message: string, assetPath: string) {
   }).filter(Boolean) as string[]
   console.warn(urls)
 
-  const tempList: string[] = []
-  const existPics = (await Promise.allSettled(urls.map(async (url) => {
+  const res = (await Promise.allSettled(urls.map(async (url) => {
     // get the hash id
     const splits = url.split('/')
     let name = splits[5].split('-')[2]
@@ -93,7 +101,7 @@ async function savePics(message: string, assetPath: string) {
     const found = pics.find(it => it.includes(filename))
     if (found) {
       console.warn(`图片 ${filename} 已存在`)
-      throw new Error(`图片 ${filename} 已存在`)
+      throw new Error(filename)
     }
 
     // fetch the picture data
@@ -101,14 +109,21 @@ async function savePics(message: string, assetPath: string) {
     const absPath = join(removeStar(assetPath), filename)
     // await fsp.writeFile(absPath, response.data)
     await sharpPicture(response.data, absPath)
-    tempList.push(filename)
-  }))).filter(it => it.status === 'rejected')
+    return filename
+  })))
 
-  tempList.forEach((filename) => {
+  const existPics = res
+    .filter(it => it.status === 'rejected')
+    .map(it => (it as any).reason.message)
+  const savedPics = res
+    .filter(it => it.status === 'fulfilled')
+    .map(it => (it as any).value)
+
+  savedPics.forEach((filename) => {
     pics.push(join(removeStar(assetPath), filename))
   })
 
-  return [tempList, existPics]
+  return [savedPics, existPics]
 }
 
 const plugin = (
@@ -135,11 +150,8 @@ const plugin = (
         const [tempList, existPics] = await savePics(message, assetPath)
 
         // reply
-        if (tempList.length > 0)
-          replySave(ws, `已保存 ${tempList.join('\n')}`, cache)
-
-        if (existPics.length > 0)
-          throw new Error(errorsToString(existPics))
+        const replyMessage = getReplyMessage(tempList, existPics)
+        replySave(ws, replyMessage, cache)
         cache = null
         return
       }
@@ -159,10 +171,9 @@ const plugin = (
         const [tempList, existPics] = await savePics(message, assetPath)
 
         // reply
-        if (tempList.length > 0)
-          replySave(ws, `已保存 ${tempList.join('\n')}`, data)
-        if (existPics.length > 0)
-          throw new Error(errorsToString(existPics))
+        const replyMessage = getReplyMessage(tempList, existPics)
+        replySave(ws, replyMessage, data)
+
         return
       }
 

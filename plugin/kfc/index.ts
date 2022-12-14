@@ -52,10 +52,18 @@ export default definePlugin({
         return
       }
 
-      ws.send('send_group_msg', {
-        group_id: data.group_id,
-        message: (await axios.get('https://api.widcard.win/kfc')).data,
-      })
+      try {
+        ws.send('send_group_msg', {
+          group_id: data.group_id,
+          message: (await axios.get('https://api.widcard.win/kfc')).data,
+        })
+      }
+      catch (e) {
+        ws.send('send_group_msg', {
+          group_id: data.group_id,
+          message: String(e),
+        })
+      }
     }
   },
 })
