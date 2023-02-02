@@ -22,7 +22,7 @@ const urlPattern = /\[CQ:image,file=([^\]]+?),url=([^\]]+?)\]/g
 const singlePicPattern = /\[CQ:image,file=([^\]]+?),url=([^\]]+?)\]$/
 const replySavePattern = /^\[CQ:reply,id=([-\d]+)\][\s\S]*shota save$/
 
-async function scanPics(path: string) {
+async function scanPics(path: string | string[]) {
   pics = await fg(path, { absolute: true })
   scanned = true
 }
@@ -127,7 +127,7 @@ async function savePics(message: string, assetPath: string): Promise<[string[], 
 }
 
 const plugin = (
-  assetPath: string,
+  assetPath: string | string[],
   valid?: {
     validGroups?: number[]
     validGroupUsers?: number[]
@@ -138,6 +138,7 @@ const plugin = (
   desc: '发送正太图片',
   ...valid,
   async setup({ data, ws }) {
+    const savePath = typeof assetPath === 'string' ? assetPath : assetPath[0]
     try {
       if (!scanned) {
         await scanPics(assetPath)
@@ -147,7 +148,7 @@ const plugin = (
       if (data?.data?.message && cache) {
         const message = data.data.message as string
 
-        const [tempList, existPics] = await savePics(message, assetPath)
+        const [tempList, existPics] = await savePics(message, savePath)
 
         // reply
         const replyMessage = getReplyMessage(tempList, existPics)
@@ -168,7 +169,7 @@ const plugin = (
       }
 
       if (/^(正太|shota) (保存|save)([\s\S]+)?$/i.test(message)) {
-        const [tempList, existPics] = await savePics(message, assetPath)
+        const [tempList, existPics] = await savePics(message, savePath)
 
         // reply
         const replyMessage = getReplyMessage(tempList, existPics)

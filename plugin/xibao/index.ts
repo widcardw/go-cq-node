@@ -7,7 +7,7 @@ import { definePlugin } from '../../utils/define-plugin'
 import type { ImageMessage } from '../../types'
 import { isGroup, isPrivate } from '../../types'
 
-const pattern = /^\/喜报 ([\s\S]+)$/
+const pattern = /^!喜报 ([\s\S]+)$/
 const width = 650
 const height = 487
 

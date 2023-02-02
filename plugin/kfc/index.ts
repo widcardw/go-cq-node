@@ -55,7 +55,7 @@ export default definePlugin({
       try {
         ws.send('send_group_msg', {
           group_id: data.group_id,
-          message: (await axios.get('https://api.widcard.win/kfc')).data,
+          message: (await axios.get('https://api.widcard.win/kfc', { timeout: 5000 })).data,
         })
       }
       catch (e) {
