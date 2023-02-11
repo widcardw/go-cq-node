@@ -65,37 +65,64 @@ interface GroupNotifyMessage {
   target_id: number // 被戳者
 }
 
-type TextMessage = string | {
+interface ToBeSentMessage {
+  type: string
+}
+
+interface TextMessage extends ToBeSentMessage {
   type: 'text'
   data: {
     text: string
   }
 }
 
-interface ReplyMessage {
+interface ReplyMessage extends ToBeSentMessage {
   type: 'reply'
   data: {
     id: number
   }
 }
 
-interface ImageMessage {
+interface ImageMessage extends ToBeSentMessage {
   type: 'image'
   data: {
     file: string
   }
 }
 
+function createTextMsg(text: string): TextMessage {
+  return {
+    type: 'text',
+    data: { text },
+  }
+}
+
+function createReplyMsg(id: number): ReplyMessage {
+  return {
+    type: 'reply',
+    data: { id },
+  }
+}
+
+function createImgMsg(url: string): ImageMessage {
+  return {
+    type: 'image',
+    data: { file: url },
+  }
+}
+
 type MulMessage = TextMessage | ReplyMessage | ImageMessage
+
+type SentMessage = MulMessage | MulMessage[]
 
 interface GroupMessageParams {
   group_id: number
-  message: MulMessage | MulMessage[]
+  message: SentMessage
 }
 
 interface PrivateMessageParams {
   user_id: number
-  message: MulMessage | MulMessage[]
+  message: SentMessage
 }
 
 interface PrivateFileMessage {
@@ -151,4 +178,8 @@ export {
   isGroup,
   isGroupNotify,
   isGetMessageParams,
+  createTextMsg,
+  createReplyMsg,
+  createImgMsg,
+  SentMessage,
 }

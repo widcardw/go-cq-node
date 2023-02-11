@@ -6,6 +6,7 @@ import Kfc from './plugin/kfc'
 import { groups } from './private/groups'
 import Xibao from './plugin/xibao'
 import Tex from './plugin/tex'
+import { friends } from './private/friends'
 
 defineConfig({
   plugins: [
@@ -20,7 +21,7 @@ defineConfig({
     QrCode,
     Kfc,
     Xibao(Object.values(groups)),
-    Tex({ validGroups: Object.values(groups) }),
+    Tex({ validGroups: Object.values(groups), validPrivate: Object.values(friends) }),
   ],
   validGroups: Object.values(groups),
 })

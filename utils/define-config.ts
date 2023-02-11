@@ -1,8 +1,9 @@
+import type { MyWs } from '../bot/ws'
 import createWs from '../bot/ws'
-import type { GroupMessage, PrivateMessage } from '../types'
-import { isGroup, isPrivate } from '../types'
-import type { PluginType } from './define-plugin'
-import { install } from './define-plugin'
+import { createTextMsg } from '../types'
+import type { PluginType, ReceivedMessageType, RestrictedValidateConfig } from './define-plugin'
+import { install, validateAbleToResponse } from './define-plugin'
+import { wrapSend } from './wrap-send'
 
 interface CqtsConfig {
   /**
@@ -39,6 +40,15 @@ function getPluginInfo(plugins: PluginType[], page: number): string {
   }).join('\n')
 }
 
+function infoPlugin(plugins: PluginType[], ws: MyWs, data: ReceivedMessageType): boolean {
+  const match = data.message && data.message.trim().match(/^(正太|shota) help(\s+)?(\d+)?$/i)
+  if (!match)
+    return false
+  const context = getPluginInfo(plugins, Number(match[3]))
+  wrapSend(ws, data, createTextMsg(context))
+  return true
+}
+
 function defineConfig(config: CqtsConfig) {
   const resolvedConfig: RestrictedCqtsConfig = {
     processor: 'ws',
@@ -51,65 +61,34 @@ function defineConfig(config: CqtsConfig) {
   }
   if (resolvedConfig.processor === 'ws') {
     const ws = createWs(resolvedConfig.url)
-    ws.listen((data: PrivateMessage | GroupMessage | any) => {
-      if (isGroup(data)) {
-        // 有效的群聊，为空时均有效
-        if (resolvedConfig.validGroups.length > 0) {
-          // 仅在列表中的群有效
-          if (!resolvedConfig.validGroups.includes(data.group_id))
-            return
-        }
+    const { plugins, validGroups, validGroupUsers, validPrivate } = resolvedConfig
+    ws.listen((data: ReceivedMessageType) => {
+      if (data.post_type === 'meta_event' || data.post_type === 'notice' || data.post_type === 'request')
+        return
+      // eslint-disable-next-line no-console
+      console.log(data)
+      if ((data as any).data && Object.keys((data as any).data).length === 1)
+        return
 
-        // 仅有指定用户有效
-        if (resolvedConfig.validGroupUsers.length > 0) {
-          if (!resolvedConfig.validGroupUsers.includes(data.user_id))
-            return
-        }
+      const valid = validateAbleToResponse({
+        validGroups,
+        validGroupUsers,
+        validPrivate,
+      }, data)
+      if (!valid)
+        return
 
-        const match = data.message.trim().match(/^(正太|shota) help(\s+)?(\d+)?$/i)
-        if (match) {
-          ws.send('send_group_msg', {
-            group_id: data.group_id,
-            message: getPluginInfo(resolvedConfig.plugins, Number(match[3])),
-          })
-        }
-      }
-      else if (isPrivate(data)) {
-        // 私聊，仅固定用户有效
-        if (resolvedConfig.validPrivate.length > 0) {
-          if (!resolvedConfig.validPrivate.includes(data.user_id))
-            return
-        }
+      if (data.message && data.message.trim() === '')
+        return
 
-        const match = data.message.trim().match(/^(正太|shota) help(\s+)?(\d+)?$/i)
-        if (match) {
-          ws.send('send_private_msg', {
-            user_id: data.user_id,
-            message: getPluginInfo(resolvedConfig.plugins, Number(match[3])),
-          })
-        }
-      }
-
-      if (data.post_type !== 'meta_event' && data.meta_event_type !== 'heartbeat')
-        // eslint-disable-next-line no-console
-        console.log(data)
+      if (infoPlugin(resolvedConfig.plugins, ws, data))
+        return
 
       try {
-        install(resolvedConfig.plugins, { data, ws })
+        install(plugins, { data, ws })
       }
       catch (e) {
-        if (isGroup(data)) {
-          ws.send('send_group_msg', {
-            group_id: data.group_id,
-            message: String(e),
-          })
-        }
-        else if (isPrivate(data)) {
-          ws.send('send_private_msg', {
-            user_id: data.user_id,
-            message: String(e),
-          })
-        }
+        wrapSend(ws, data, createTextMsg(String(e)))
       }
     })
   }

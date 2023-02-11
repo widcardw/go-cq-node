@@ -1,6 +1,6 @@
-import { bots } from '../../private/bot'
-import { isGroup, isGroupNotify } from '../../types'
+import { createTextMsg } from '../../types'
 import { definePlugin } from '../../utils/define-plugin'
+import { randInt } from '../../utils/rand'
 
 const pattern = /^[摸拍挠戳]正太(头|脑袋)?$/
 const pattern2 = /^[揉拍挠摸戳舔捏]正太[蛋淡〇即鸡唧]{2,}$/
@@ -37,50 +37,17 @@ const chuo = [
 export default definePlugin({
   name: 'Tap',
   desc: '[摸拍挠戳]正太(头|脑袋)',
-  async setup({ data, ws }) {
-    if (isGroup(data)) {
-      if (Object.values(bots).includes(data.user_id))
-        return
-
-      if (!data.message)
-        return
-
-      const message = data.message.trim()
-
-      if (!message)
-        return
-
-      if (pattern.test(message)) {
-        const rand = Math.floor(Math.random() * m.length)
-        ws.send('send_group_msg', {
-          group_id: data.group_id,
-          message: m[rand],
-        })
-      }
-      else if (pattern2.test(message)) {
-        const rand = Math.floor(Math.random() * m2.length)
-        ws.send('send_group_msg', {
-          group_id: data.group_id,
-          message: m2[rand],
-        })
-      }
-      // else if (message.includes(data.self_id.toString())) {
-      //   ws.send('send_group_msg', {
-      //     group_id: data.group_id,
-      //     message: '怎么了嘛',
-      //   })
-      // }
+  async setup({ data }) {
+    if (!data.message)
+      return
+    const message = data.message
+    if (pattern.test(message)) {
+      const rand = randInt(0, m.length)
+      return createTextMsg(m[rand])
     }
-    else if (isGroupNotify(data)) {
-      if (data.target_id !== data.self_id)
-        return
-      if (Math.random() > 0.5)
-        return
-      const rand = Math.floor(Math.random() * chuo.length)
-      ws.send('send_group_msg', {
-        group_id: data.group_id,
-        message: chuo[rand],
-      })
+    else if (pattern2.test(message)) {
+      const rand = Math.floor(Math.random() * m2.length)
+      return createTextMsg(m2[rand])
     }
   },
 })

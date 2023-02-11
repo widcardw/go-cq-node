@@ -4,9 +4,10 @@ import fg from 'fast-glob'
 import { nanoid } from 'nanoid'
 import sharp from 'sharp'
 import type { ImageMessage } from '../../types'
-import { isGroup, isPrivate } from '../../types'
+import { createTextMsg } from '../../types'
 import { definePlugin } from '../../utils/define-plugin'
 import type { MyWs } from '../../bot/ws'
+import { wrapSend } from '../../utils/wrap-send'
 let interval: NodeJS.Timer
 let notAbleToSend = false
 let cache: any = null
@@ -31,10 +32,8 @@ function getReplyMessage(savedPics: string[], existPics: string[]): string {
   let replyMessage = ''
   if (savedPics.length > 0)
     replyMessage += `已保存 ${savedPics.join('\n')}`
-  if (replyMessage !== '')
-    replyMessage += '\n\n'
-  if (existPics.length > 0)
-    replyMessage += `${existPics.join('\n')} 已存在`
+  if (replyMessage !== '' && existPics.length > 0)
+    replyMessage += `\n\n${existPics.join('\n')} 已存在`
   if (replyMessage.trim() === '')
     replyMessage = '什么都没保存捏'
   return replyMessage
@@ -48,21 +47,6 @@ function getImage(): ImageMessage {
     data: {
       file: `file://${pics[rand]}`,
     },
-  }
-}
-
-function replySave(ws: MyWs, message: string, data: any) {
-  if (isGroup(data)) {
-    ws.send('send_group_msg', {
-      group_id: data.group_id,
-      message,
-    })
-  }
-  else if (isPrivate(data)) {
-    ws.send('send_private_msg', {
-      user_id: data.user_id,
-      message,
-    })
   }
 }
 
@@ -145,14 +129,16 @@ const plugin = (
         console.warn('共 ', pics.length)
       }
 
+      // @ts-expect-error type wrong
       if (data?.data?.message && cache) {
+      // @ts-expect-error type wrong
         const message = data.data.message as string
 
         const [tempList, existPics] = await savePics(message, savePath)
 
         // reply
         const replyMessage = getReplyMessage(tempList, existPics)
-        replySave(ws, replyMessage, cache)
+        wrapSend(ws, cache, createTextMsg(replyMessage))
         cache = null
         return
       }
@@ -173,14 +159,13 @@ const plugin = (
 
         // reply
         const replyMessage = getReplyMessage(tempList, existPics)
-        replySave(ws, replyMessage, data)
 
-        return
+        return createTextMsg(replyMessage)
       }
 
       if (replySavePattern.test(message)) {
         // console.warn('根据回复保存图片')
-        const msg_id = Number(message.match(replySavePattern)[1])
+        const msg_id = Number(message.match(replySavePattern)![1])
         if (isNaN(msg_id))
           throw new Error('消息 ID 不合法')
 
@@ -193,64 +178,23 @@ const plugin = (
       if (message !== '正太' && message !== 'shota')
         return
 
-      if (isGroup(data)) {
-        if (notAbleToSend)
-          throw new Error('你先别急')
-
-        ws.send('send_group_msg', {
-          group_id: data.group_id,
-          message: [
-            getImage(),
-          ],
-        })
-      }
-      else if (isPrivate(data)) {
-        if (notAbleToSend)
-          throw new Error('你先别急')
-
-        ws.send('send_private_msg', {
-          user_id: data.user_id,
-          message: [
-            getImage(),
-          ],
-        })
-      }
+      if (notAbleToSend)
+        throw new Error('你先别急')
 
       notAbleToSend = true
       interval = setTimeout(() => {
         clearInterval(interval)
         notAbleToSend = false
       }, 8000)
+      return getImage()
     }
     catch (e: any) {
       if (cache) {
-        if (isGroup(cache)) {
-          ws.send('send_group_msg', {
-            group_id: cache.group_id,
-            message: e.message || String(e),
-          })
-        }
-        else if (isPrivate(cache)) {
-          ws.send('send_private_msg', {
-            user_id: cache.user_id,
-            message: e.message || String(e),
-          })
-        }
+        wrapSend(ws, cache, createTextMsg(e.message || String(e)))
         cache = null
       }
       else {
-        if (isGroup(data)) {
-          ws.send('send_group_msg', {
-            group_id: data.group_id,
-            message: e.message || String(e),
-          })
-        }
-        else if (isPrivate(data)) {
-          ws.send('send_private_msg', {
-            user_id: data.user_id,
-            message: e.message || String(e),
-          })
-        }
+        return e.message || String(e)
       }
     }
   },

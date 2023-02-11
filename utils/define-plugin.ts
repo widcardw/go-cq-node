@@ -1,9 +1,11 @@
 import type { MyWs } from '../bot/ws'
-import type { Bhttp, GroupMessage, GroupNotifyMessage, PrivateMessage } from '../types'
+import type { Bhttp, GroupMessage, PrivateMessage, SentMessage } from '../types'
 import { isGroup, isPrivate } from '../types'
+import { wrapSend } from './wrap-send'
+type ReceivedMessageType = PrivateMessage | GroupMessage
 
 interface FuncParamsWs {
-  data: PrivateMessage | GroupMessage | GroupNotifyMessage | any
+  data: ReceivedMessageType
   ws: MyWs
   http?: Bhttp
   // type: '__FuncParamsWs'
@@ -24,13 +26,18 @@ interface FuncParamsWs {
 //   return data.type && data.type === '__FuncParamsHttp'
 // }
 
-interface PluginOptions {
-  name: string
-  desc: string
+interface ValidateConfig {
   validGroups?: number[]
   validGroupUsers?: number[]
   validPrivate?: number[]
-  setup: (params: FuncParamsWs) => void | Promise<void>
+}
+
+type RestrictedValidateConfig = Required<ValidateConfig>
+
+interface PluginOptions extends ValidateConfig {
+  name: string
+  desc: string
+  setup: (params: FuncParamsWs) => SentMessage | Promise<SentMessage | undefined> | undefined
 }
 
 type RestrictedPluginOptions = Required<PluginOptions>
@@ -80,30 +87,36 @@ function resolveOptions(options: PluginOptions): RestrictedPluginOptions {
   return o
 }
 
-function install(plugins: PluginType[], params: FuncParamsWs): void
-// function install(plugins: PluginType[], params: FuncParamsHttp): void
+function validateAbleToResponse(plugin: RestrictedValidateConfig, data: ReceivedMessageType): boolean {
+  if (isPrivate(data)) {
+    if (plugin.validPrivate.length > 0) {
+      if (!plugin.validPrivate.includes(data.user_id))
+        return false
+    }
+  }
+  else if (isGroup(data)) {
+    if (plugin.validGroups.length > 0) {
+      if (!plugin.validGroups.includes(data.group_id))
+        return false
+    }
+
+    if (plugin.validGroupUsers.length > 0) {
+      if (!plugin.validGroupUsers.includes(data.user_id))
+        return false
+    }
+  }
+  return true
+}
 
 function install(plugins: PluginType[], params: FuncParamsWs) {
-  plugins.forEach((plugin) => {
-    const { data } = params
-    if (isPrivate(data)) {
-      if (plugin.validPrivate.length > 0) {
-        if (!plugin.validPrivate.includes(data.user_id))
-          return
-      }
-    }
-    else if (isGroup(data)) {
-      if (plugin.validGroups.length > 0) {
-        if (!plugin.validGroups.includes(data.group_id))
-          return
-      }
-
-      if (plugin.validGroupUsers.length > 0) {
-        if (!plugin.validGroupUsers.includes(data.user_id))
-          return
-      }
-    }
-    plugin.setup(params)
+  plugins.forEach(async (plugin) => {
+    const { data, ws } = params
+    const valid = validateAbleToResponse(plugin, data)
+    if (!valid)
+      return
+    const sentMsg = await plugin.setup(params)
+    if (sentMsg)
+      wrapSend(ws, data, sentMsg)
   })
 }
 
@@ -112,4 +125,8 @@ export {
   install,
   PluginType,
   FunctionalPlugin,
+  ReceivedMessageType,
+  ValidateConfig,
+  RestrictedValidateConfig,
+  validateAbleToResponse,
 }

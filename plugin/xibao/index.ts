@@ -5,7 +5,7 @@ import type { CanvasRenderingContext2D } from 'canvas'
 import { createCanvas, loadImage, registerFont } from 'canvas'
 import { definePlugin } from '../../utils/define-plugin'
 import type { ImageMessage } from '../../types'
-import { isGroup, isPrivate } from '../../types'
+import { createTextMsg } from '../../types'
 
 const pattern = /^!喜报 ([\s\S]+)$/
 const width = 650
@@ -14,7 +14,7 @@ const height = 487
 let interval: NodeJS.Timer
 let notAbleToSend = false
 
-function transformSymbols(s: string) {
+export function transformSymbols(s: string) {
   return s.replaceAll(/&#(\d+?);/g, (...args) => {
     return String.fromCharCode(Number(args[1]))
   }).replaceAll(/&amp;/g, '&')
@@ -23,70 +23,38 @@ function transformSymbols(s: string) {
 export default (validGroups?: number[]) => definePlugin({
   name: '喜报',
   desc: '生成喜报图片',
-  async setup({ data, ws }) {
+  validGroups,
+  async setup({ data }) {
     if (!data.message)
       return
     try {
-      if (isPrivate(data)) {
-        const match = data.message.match(pattern)
-        if (!match)
-          return
+      const match = data.message.match(pattern)
+      if (!match)
+        return
 
-        if (notAbleToSend)
-          throw new Error('你先别急')
+      if (notAbleToSend)
+        throw new Error('你先别急')
 
-        const textContent = match[1]
-
-        ws.send('send_private_msg', {
-          user_id: data.user_id,
-          message: await service(textContent),
-        })
-      }
-      else if (isGroup(data)) {
-        if (validGroups?.length && !validGroups.includes(data.group_id))
-          return
-
-        const match = data.message.match(pattern)
-        if (!match)
-          return
-
-        if (notAbleToSend)
-          throw new Error('你先别急')
-
-        let textContent = match[1]
-        if (!/[\u4E00-\u9FA5]|[A-Za-z\d]/g.test(textContent)
+      let textContent = match[1]
+      if (!/[\u4E00-\u9FA5]|[A-Za-z\d]/g.test(textContent)
           || textContent.includes('[CQ:at')
           || textContent.includes('[CQ:face'))
-          throw new Error('请不要乱写谢谢')
+        throw new Error('请不要乱写谢谢')
 
-        if (textContent.includes('CQ:image'))
-          throw new Error('目前不支持图片')
+      if (textContent.includes('CQ:image'))
+        throw new Error('目前不支持图片')
 
-        textContent = transformSymbols(textContent)
-        ws.send('send_group_msg', {
-          group_id: data.group_id,
-          message: await service(textContent),
-        })
-      }
+      textContent = transformSymbols(textContent)
+
       notAbleToSend = true
       interval = setTimeout(() => {
         clearInterval(interval)
         notAbleToSend = false
       }, 5000)
+      return await service(textContent)
     }
     catch (e: any) {
-      if (isGroup(data)) {
-        ws.send('send_group_msg', {
-          group_id: data.group_id,
-          message: e.message || String(e),
-        })
-      }
-      else if (isPrivate(data)) {
-        ws.send('send_private_msg', {
-          user_id: data.user_id,
-          message: e.message || String(e),
-        })
-      }
+      return createTextMsg(e.message || String(e))
     }
   },
 })

@@ -1,7 +1,8 @@
 import axios from 'axios'
 import { owner } from '../../private/owner'
-import { isGroup } from '../../types'
+import { createTextMsg } from '../../types'
 import { definePlugin } from '../../utils/define-plugin'
+import { randInt } from '../../utils/rand'
 
 const pattern = /^(!|！)kfc$/i
 const pattern2 = /^sudo kfc([\s\S]+)?$/i
@@ -14,56 +15,36 @@ const ben = [
 export default definePlugin({
   name: '!KFC',
   desc: '肯德基疯狂星期四',
-  async setup({ data, ws }) {
-    if (isGroup(data)) {
-      if (!data.message)
+  async setup({ data }) {
+    if (!data.message)
+      return
+
+    const message = data.message.trim()
+
+    if (!message)
+      return
+
+    if (!pattern2.test(message)) {
+      if (!pattern.test(message))
         return
 
-      const message = data.message.trim()
+      if (message.startsWith('！'))
+        return createTextMsg(ben[randInt(0, ben.length)])
 
-      if (!message)
-        return
+      if (new Date().getDay() !== 4)
+        return createTextMsg('今天还没到疯狂星期四捏')
+    }
+    else if (!Object.values(owner).includes(data.user_id)) {
+      return createTextMsg('权限不足')
+    }
 
-      if (!pattern2.test(message)) {
-        if (!pattern.test(message))
-          return
-
-        if (message.startsWith('！')) {
-          ws.send('send_group_msg', {
-            group_id: data.group_id,
-            message: ben[Math.floor(Math.random() * ben.length)],
-          })
-          return
-        }
-
-        if (new Date().getDay() !== 4) {
-          ws.send('send_group_msg', {
-            group_id: data.group_id,
-            message: '今天还没到疯狂星期四捏',
-          })
-          return
-        }
-      }
-      else if (!Object.values(owner).includes(data.user_id)) {
-        ws.send('send_group_msg', {
-          group_id: data.group_id,
-          message: '权限不足',
-        })
-        return
-      }
-
-      try {
-        ws.send('send_group_msg', {
-          group_id: data.group_id,
-          message: (await axios.get('https://api.widcard.win/kfc', { timeout: 5000 })).data,
-        })
-      }
-      catch (e) {
-        ws.send('send_group_msg', {
-          group_id: data.group_id,
-          message: String(e),
-        })
-      }
+    try {
+      return createTextMsg(
+        (await axios.get('https://api.widcard.win/kfc', { timeout: 5000 })).data,
+      )
+    }
+    catch (e) {
+      return createTextMsg(String(e))
     }
   },
 })

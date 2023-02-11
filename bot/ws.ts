@@ -1,6 +1,5 @@
 import WebSocket from 'ws'
 import type { GetMessageParams, GroupFileMessage, GroupMessageParams, PrivateFileMessage, PrivateMessageParams, SendActions } from '../types'
-// import { isGetMessageParams } from '../types'
 
 export class MyWs {
   ws: WebSocket

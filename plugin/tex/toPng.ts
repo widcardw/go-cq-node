@@ -4,7 +4,7 @@ import path from 'path'
 import { Resvg } from '@resvg/resvg-js'
 
 async function toPng(svg: string) {
-  svg = svg.match(/<svg(.*?)<\/svg>/)![0]
+  svg = svg.match(/<svg(.*)<\/svg>/)![0]
   const resvg = new Resvg(svg, {
     background: 'rgb(255,255,255)',
     fitTo: {

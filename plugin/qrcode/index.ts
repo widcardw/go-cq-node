@@ -1,4 +1,4 @@
-import { isGroup, isPrivate } from '../../types'
+import { createTextMsg } from '../../types'
 import { definePlugin } from '../../utils/define-plugin'
 import { getImage } from './service'
 
@@ -9,12 +9,11 @@ let notAbleToSend = false
 export default definePlugin({
   name: 'QrCode',
   desc: '二维码生成器',
-  async setup({ data, ws }) {
+  async setup({ data }) {
     if (!data.message)
       return
 
     let message = data.message.trim()
-
     if (!pattern.test(message))
       return
 
@@ -22,43 +21,21 @@ export default definePlugin({
     if (!message)
       return
 
-    if (isGroup(data)) {
-      if (notAbleToSend) {
-        ws.send('send_group_msg', {
-          group_id: data.group_id,
-          message: '你先别急',
-        })
-        return
-      }
-      ws.send('send_group_msg', {
-        group_id: data.group_id,
-        message: [
-          {
-            type: 'reply',
-            data: { id: data.message_id },
-          },
-          ...(await getImage(message)),
-        ],
-      })
-    }
-    else if (isPrivate(data)) {
-      if (notAbleToSend) {
-        ws.send('send_private_msg', {
-          user_id: data.user_id,
-          message: '你先别急',
-        })
-        return
-      }
-      ws.send('send_private_msg', {
-        user_id: data.user_id,
-        message: await getImage(message),
-      })
-    }
+    if (notAbleToSend)
+      return createTextMsg('你先别急')
 
     notAbleToSend = true
     inteval = setTimeout(() => {
       clearTimeout(inteval)
       notAbleToSend = false
     }, 5000)
+
+    return [
+      {
+        type: 'reply',
+        data: { id: data.message_id },
+      },
+      ...(await getImage(message)),
+    ]
   },
 })

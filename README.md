@@ -60,9 +60,11 @@ import { definePlugin } from '../../utils/define-plugin'
 
 export default definePlugin({
   name: 'blank',
-  desc: 'No desc',
+  desc: 'description',
   async setup({ data, ws }) {
     // TODO
+    // 该函数如果返回一条消息，例如 `return createTextMsg('...')`，那么将会自动将这条消息发送出去
+    // 如果没有返回值，则不会做出相应
   },
   validGroups: [12345678, 90123456], // 为空时均接收，不为空时仅接受列表内的群号
   validGroupUsers: [], // 为空时均接收，不为空时仅接受列表内用户发送的群消息
