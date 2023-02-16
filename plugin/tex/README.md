@@ -1,13 +1,7 @@
-# blank
+# 图片公式生成器
 
-> 空白插件
+支持两种格式的输入
 
-```js
-module.exports = {
-  plugin: {
-    './plugin/blank': {}
-  }
-}
-```
+1. `!am <Asciimath 公式>`
+2. `!tex <LaTeX 公式>`
 
-TODO:

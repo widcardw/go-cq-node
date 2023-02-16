@@ -49,6 +49,7 @@ defineConfig({
 | [shota](plugin/shota)     | 正太图（需自行放图片）   |
 | [kfc](plugin/kfc)     | 肯德基疯狂星期四文案   |
 | [tap](plugin/tap)     |  自动回复文案  |
+| [tex](plugin/tex)     |  图片公式生成器  |
 
 ### 开发插件
 
