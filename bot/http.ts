@@ -18,4 +18,3 @@ export default function createHttp(url: string) {
   }
   return hh
 }
-

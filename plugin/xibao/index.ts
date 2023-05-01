@@ -28,6 +28,8 @@ export default (validGroups?: number[]) => definePlugin({
     if (!data.message)
       return
     try {
+      if (data.message && data.message === '喜报')
+        return createTextMsg('输入 `!喜报 xxxx` 以生成一张喜报图片，多行文本请手动换行')
       const match = data.message.match(pattern)
       if (!match)
         return

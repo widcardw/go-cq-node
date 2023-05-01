@@ -2,13 +2,13 @@ lockfileVersion: 5.4
 
 specifiers:
   '@resvg/resvg-js': ^2.2.0
-  asciimath-parser: ^0.3.8
+  asciimath-parser: ^0.4.0-beta.2
   juice: ^8.1.0
   mathjax-full: ^3.2.2
 
 devDependencies:
   '@resvg/resvg-js': 2.2.0
-  asciimath-parser: 0.3.8
+  asciimath-parser: 0.4.0-beta.3
   juice: 8.1.0
   mathjax-full: 3.2.2
 
@@ -145,8 +145,8 @@ packages:
     engines: {node: '>=6'}
     dev: true
 
-  /asciimath-parser/0.3.8:
-    resolution: {integrity: sha512-ybQ4vpdiLotQCevkIetnDCIze/KMOerrUNkeGAOGi1EkyIs7D6wsm0hK6VT7neeu+JlkilqcVuWHxfvNdY/vJA==}
+  /asciimath-parser/0.4.0-beta.3:
+    resolution: {integrity: sha512-wEwlU7ejkrrDT5EWUhJl3fE8QesmUCe8SSacnkSxARO2+JJWRtaroOvuA5js4GnSz8XfIx1tZTKcE7R3EwF+rA==}
     dev: true
 
   /boolbase/1.0.0:
